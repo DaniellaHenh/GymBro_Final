@@ -1,14 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios'; // For geocoding API requests
 import { db } from '../firebase';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { auth } from '../firebase';
 import './FindPartners.css';
 
-function FindPartners() {
+function FindPartners({ partners }) {
   const [filters, setFilters] = useState({
     workoutType: '',
     experienceLevel: '',
-    distance: 10, // default km
+    distance: 20, // default km
     timeSlot: ''
   });
   const [users, setUsers] = useState([]);
@@ -16,6 +17,9 @@ function FindPartners() {
   const [currentUserCity, setCurrentUserCity] = useState('');
   const [userProfile, setUserProfile] = useState(null);
   const [userGroups, setUserGroups] = useState([]);
+  const [userLocation, setUserLocation] = useState(null);
+  const [distance, setDistance] = useState('');
+  const [filteredPartners, setFilteredPartners] = useState([]);
 
   const workoutTypes = ['Strength Training', 'Running', 'Yoga', 'CrossFit', 'Swimming', 'Cycling', 'HIIT', 'Pilates'];
   const experienceLevels = ['Beginner', 'Intermediate', 'Advanced'];
@@ -81,6 +85,85 @@ function FindPartners() {
     }
     // eslint-disable-next-line
   }, [currentUserCity]);
+
+  const geocodeLocation = async (location) => {
+    try {
+      const response = await axios.get('https://maps.googleapis.com/maps/api/geocode/json', {
+        params: {
+          address: `${location}, ישראל`, // Add "Israel" for better recognition
+          key: 'af1676e1888b43f1bf86b2d7784169dc', // Replace with your API key
+        },
+      });
+      const { lat, lng } = response.data.results[0].geometry.location;
+      return { latitude: lat, longitude: lng };
+    } catch (error) {
+      console.error('Error geocoding location:', error);
+      return null;
+    }
+  };
+
+  const calculateDistance = (lat1, lon1, lat2, lon2) => {
+    const toRad = (value) => (value * Math.PI) / 180;
+    const R = 6371; // Radius of Earth in kilometers
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(toRad(lat1)) *
+        Math.cos(toRad(lat2)) *
+        Math.sin(dLon / 2) *
+        Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance in kilometers
+  };
+
+  const handleSearch = async () => {
+    if (!userLocation) {
+      alert('Unable to get your location.');
+      return;
+    }
+
+    setLoading(true);
+
+    const filtered = [];
+    for (const partner of partners) {
+      if (!partner.location) continue;
+
+      const partnerCoords = await geocodeLocation(partner.location);
+      if (!partnerCoords) continue;
+
+      const distanceToPartner = calculateDistance(
+        userLocation.latitude,
+        userLocation.longitude,
+        partnerCoords.latitude,
+        partnerCoords.longitude
+      );
+
+      if (distanceToPartner <= distance) {
+        filtered.push(partner);
+      }
+    }
+
+    setFilteredPartners(filtered);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    const fetchUserLocation = async () => {
+      if (!partners || !Array.isArray(partners)) {
+        console.error('Partners array is undefined or not an array.');
+        return;
+      }
+
+      const currentUser = partners.find((partner) => partner.isCurrentUser); // Assuming current user is marked
+      if (currentUser && currentUser.location) {
+        const coords = await geocodeLocation(currentUser.location);
+        setUserLocation(coords);
+      }
+    };
+
+    fetchUserLocation();
+  }, [partners]);
 
   return (
     <div className="feed-dashboard" dir="rtl">
@@ -164,6 +247,24 @@ function FindPartners() {
             </button>
           </div>
         </div>
+        <div className="filters-section">
+          <h2>מצא שותפים לפי מרחק</h2>
+          <div className="filters">
+            <div className="filter-group">
+              <label htmlFor="distance">מרחק (ק"מ)</label>
+              <input
+                type="number"
+                id="distance"
+                placeholder="הכנס מרחק בקילומטרים"
+                value={distance}
+                onChange={(e) => setDistance(e.target.value)}
+              />
+            </div>
+            <button className="search-button" onClick={handleSearch} disabled={loading}>
+              {loading ? 'מחפש...' : 'חפש'}
+            </button>
+          </div>
+        </div>
         <div className="results-section">
           {loading ? (
             <div className="loading">מחפש שותפים...</div>
@@ -201,9 +302,32 @@ function FindPartners() {
             </div>
           )}
         </div>
+        <div className="results-section">
+          {filteredPartners.length > 0 ? (
+            <div className="users-grid">
+              {filteredPartners.map((partner) => (
+                <div className="user-card" key={partner.id}>
+                  <img
+                    src={partner.profilePicture}
+                    alt={`${partner.name}'s avatar`}
+                    className="user-avatar"
+                  />
+                  <div className="user-info">
+                    <h3>{partner.name}</h3>
+                    <p>{partner.bio}</p>
+                    <p>מיקום: {partner.location}</p>
+                  </div>
+                  <button className="connect-button">התחבר</button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="loading">לא נמצאו שותפים במרחק המבוקש.</div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-export default FindPartners; 
+export default FindPartners;
