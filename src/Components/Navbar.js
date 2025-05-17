@@ -23,7 +23,7 @@ function Navbar({ currentUser, onLogout }) {
   return (
     <nav className="navbar" dir="rtl">
       <div className="navbar-left">
-        <Link to="/feed" className="navbar-brand">FitPartner</Link>
+        <Link to={currentUser ? "/feed" : "/"} className="navbar-brand">FitPartner</Link>
       </div>
       <div className="navbar-right">
         <Link to="/feed" className="nav-link">דף הבית</Link>
@@ -39,7 +39,9 @@ function Navbar({ currentUser, onLogout }) {
             <span className="navbar-username">{profile.name || profile.firstName || 'משתמש'}</span>
           </div>
         )}
-        <button onClick={onLogout} className="logout-button">התנתק</button>
+        {currentUser && (
+          <button onClick={onLogout} className="logout-button">התנתק</button>
+        )}
       </div>
     </nav>
   );

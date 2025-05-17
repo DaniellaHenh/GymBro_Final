@@ -4,6 +4,7 @@ import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import './Signup.css';
+import Navbar from './Navbar';
 
 function Signup() {
   const [formData, setFormData] = useState({
@@ -88,6 +89,8 @@ function Signup() {
   };
 
   return (
+    <>
+    <Navbar />
     <div className="signup-container" dir="rtl">
       <div className="signup-box">
         <h2>הרשמה</h2>
@@ -204,20 +207,6 @@ function Signup() {
               ))}
             </div>
           </div>
-
-          <div className="form-group terms">
-            <label className="terms-label">
-              <input
-                type="checkbox"
-                name="termsAgreed"
-                checked={formData.termsAgreed}
-                onChange={handleInputChange}
-                required
-              />
-              אני מסכים לתנאי השימוש
-            </label>
-          </div>
-
           <button type="submit" className="signup-button">הרשמה</button>
         </form>
         <p className="login-link">
@@ -225,6 +214,7 @@ function Signup() {
         </p>
       </div>
     </div>
+    </>
   );
 }
 

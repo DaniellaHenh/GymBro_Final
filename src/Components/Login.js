@@ -3,6 +3,7 @@ import { auth } from '../firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import './Login.css';
+import Navbar from './Navbar';
 
 function Login() {
   const [email, setEmail] = useState('');
@@ -22,6 +23,8 @@ function Login() {
   };
 
   return (
+    <>
+      <Navbar />
     <div className="login-container" dir="rtl">
       <div className="login-box">
         <h2 className="login-title">התחברות</h2>
@@ -57,6 +60,7 @@ function Login() {
         </p>
       </div>
     </div>
+    </>
   );
 }
 
