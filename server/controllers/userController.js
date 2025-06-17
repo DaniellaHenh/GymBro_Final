@@ -36,3 +36,39 @@ exports.handleUserCommand = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+exports.getUserByUid = async (req, res) => {
+  try {
+    const uid = req.params.uid;
+    const user = await User.findOne({ uid });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json(user);
+  } catch (err) {
+    console.error('Error fetching user:', err.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+exports.updateUserByUid = async (req, res) => {
+  try {
+    const uid = req.params.uid;
+    const updatedUser = await User.findOneAndUpdate(
+      { uid },
+      req.body,
+      { new: true }
+    );
+
+    if (!updatedUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ message: 'User updated', user: updatedUser });
+  } catch (err) {
+    console.error('Error updating user:', err.message);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+

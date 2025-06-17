@@ -3,6 +3,9 @@ import { db } from '../firebase';
 import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, getDoc } from 'firebase/firestore';
 import { auth } from '../firebase';
 import './Feed.css';
+import axios from 'axios';
+
+
 
 function Feed() {
   const [posts, setPosts] = useState([]);
@@ -31,35 +34,43 @@ function Feed() {
   }, []);
 
   useEffect(() => {
-    const q = query(collection(db, 'posts'), orderBy('timestamp', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const postsData = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      setPosts(postsData);
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  const handlePostSubmit = async (e) => {
-    e.preventDefault();
-    if (!newPost.trim() || !userProfile) return;
+  const fetchPosts = async () => {
     try {
-      await addDoc(collection(db, 'posts'), {
-        text: newPost,
-        userId: auth.currentUser.uid,
-        userName: userProfile.name || userProfile.firstName || 'משתמש',
-        timestamp: serverTimestamp(),
-        likes: [],
-        comments: []
-      });
-      setNewPost('');
-    } catch (error) {
-      console.error('Error adding post:', error);
+      const res = await axios.get('http://localhost:5000/api/posts');
+      setPosts(res.data);
+      setLoading(false);
+    } catch (err) {
+      console.error('שגיאה בטעינת פוסטים:', err);
     }
   };
+  fetchPosts();
+}, []);
+
+
+  const handlePostSubmit = async (e) => {
+  e.preventDefault();
+  if (!newPost.trim() || !userProfile) return;
+
+  try {
+    await axios.post('http://localhost:5000/api/posts/create', {
+      text: newPost,
+      userId: auth.currentUser.uid,
+      userName: userProfile.name || userProfile.firstName || 'משתמש',
+      likes: [],
+      comments: []
+    });
+
+    setNewPost('');
+
+    // רענון הפיד לאחר הוספה
+    const res = await axios.get('http://localhost:5000/api/posts');
+    setPosts(res.data);
+
+  } catch (error) {
+    console.error('שגיאה בהוספת פוסט:', error);
+  }
+};
+
 
   // Filter posts for tabs
   const myPosts = posts.filter(post => post.userId === auth.currentUser?.uid);

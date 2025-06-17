@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { db, storage } from '../firebase';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { storage } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { auth } from '../firebase';
 import './UserProfile.css';
@@ -39,37 +38,39 @@ function UserProfile() {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      if (auth.currentUser) {
-        const docRef = doc(db, 'users', auth.currentUser.uid);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          const normalized = {
-            name: data.name || data.firstName || '',
-            location: data.location || data.city || '',
-            age: data.age || '',
-            gender: data.gender || '',
-            workoutTypes: data.workoutTypes || [],
-            experienceLevel: data.experienceLevel || data.experience || '',
-            preferredTimes: data.preferredTimes || data.times || [],
-            equipment: data.equipment || [],
-            profilePicture: data.profilePicture || '',
-            description: data.description || '',
-            workoutGoals: data.workoutGoals || '',
-            fitnessLevel: data.fitnessLevel || '',
-            favoriteExercises: data.favoriteExercises || [],
-            workoutFrequency: data.workoutFrequency || '',
-            bio: data.bio || ''
-          };
-          setProfile(normalized);
-          originalProfile.current = normalized;
-          console.log('Loaded profilePicture:', normalized.profilePicture);
-          setPreviewImage(normalized.profilePicture || '');
-        }
-        setLoading(false);
+    if (auth.currentUser) {
+      try {
+        const res = await axios.get(`http://localhost:5000/api/users/${auth.currentUser.uid}`);
+        const data = res.data;
+
+        const normalized = {
+          name: data.name || '',
+          location: data.location || '',
+          age: data.age || '',
+          gender: data.gender || '',
+          workoutTypes: data.workoutTypes || [],
+          experienceLevel: data.experienceLevel || '',
+          preferredTimes: data.preferredTimes || [],
+          equipment: data.equipment || [],
+          profilePicture: data.profilePicture || '',
+          description: data.description || '',
+          workoutGoals: data.workoutGoals || '',
+          fitnessLevel: data.fitnessLevel || '',
+          favoriteExercises: data.favoriteExercises || [],
+          workoutFrequency: data.workoutFrequency || '',
+          bio: data.bio || ''
+        };
+
+        setProfile(normalized);
+        originalProfile.current = normalized;
+        setPreviewImage(normalized.profilePicture || '');
+      } catch (err) {
+        console.error('שגיאה בטעינת פרופיל:', err);
       }
-    };
-    fetchProfile();
+    }
+    setLoading(false);
+  };
+  fetchProfile();
   }, [auth.currentUser]);
 
   const handleInputChange = (e) => {
@@ -135,8 +136,7 @@ function UserProfile() {
       return;
     }
     try {
-      const userRef = doc(db, 'users', auth.currentUser.uid);
-      await updateDoc(userRef, profile);
+      await axios.put(`http://localhost:5000/api/users/${auth.currentUser.uid}`, profile);
       originalProfile.current = profile;
       alert('הפרופיל עודכן בהצלחה!');
     } catch (error) {
