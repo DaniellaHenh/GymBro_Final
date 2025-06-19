@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { auth } from './firebase';
-import { onAuthStateChanged } from 'firebase/auth';
 import Navbar from './Components/Navbar';
 import Login from './Components/Login';
 import Signup from './Components/Signup';
@@ -13,29 +11,20 @@ import HomePage from './Components/HomePage';
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-      setLoading(false);
-      
-    });
-
-    return () => unsubscribe();
+    // נטען את המשתמש מתוך localStorage
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setCurrentUser(JSON.parse(storedUser));
+    }
   }, []);
 
-  const handleLogout = async () => {
-    try {
-      await auth.signOut();
-    } catch (error) {
-      console.error('Error logging out:', error);
-    }
+  const handleLogout = () => {
+    localStorage.removeItem('user');
+    setCurrentUser(null);
+    window.location.href = '/login'; // רענון כפוי לדף התחברות
   };
-
-  if (loading) {
-    return <div className="loading">Loading...</div>;
-  }
 
   return (
     <Router>
@@ -44,7 +33,7 @@ function App() {
         <Routes>
           <Route
             path="/"
-            element={currentUser ? <Navigate to="/feed" /> :  <HomePage />}
+            element={currentUser ? <Navigate to="/feed" /> : <HomePage />}
           />
           <Route
             path="/login"

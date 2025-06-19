@@ -44,7 +44,7 @@ function UserProfile() {
     const fetchProfile = async () => {
     if (auth.currentUser) {
       try {
-        const res = await axios.get(`http://localhost:5000/api/users/${auth.currentUser.uid}`);
+        const res = await axios.get(`http://localhost:5000/api/users/${auth.currentUser._id}`);
         const data = res.data;
 
         const normalized = {
@@ -116,13 +116,13 @@ function UserProfile() {
     setPreviewImage(URL.createObjectURL(file));
     setUploading(true);
     try {
-      const imageRef = ref(storage, `profilePictures/${auth.currentUser.uid}`);
+      const imageRef = ref(storage, `profilePictures/${auth.currentUser._id}`);
       await uploadBytes(imageRef, file);
       const url = await getDownloadURL(imageRef);
       setProfile(prev => ({ ...prev, profilePicture: url }));
       setPreviewImage(url);
       // Update Firestore with new profilePicture URL
-      const userRef = doc(db, 'users', auth.currentUser.uid);
+      const userRef = doc(db, 'users', auth.currentUser._id);
       await updateDoc(userRef, { profilePicture: url });
       alert('התמונה הועלתה בהצלחה!');
     } catch (error) {
@@ -140,7 +140,7 @@ function UserProfile() {
       return;
     }
     try {
-      await axios.put(`http://localhost:5000/api/users/${auth.currentUser.uid}`, profile);
+      await axios.put(`http://localhost:5000/api/users/${auth.currentUser._id}`, profile);
       originalProfile.current = profile;
       alert('הפרופיל עודכן בהצלחה!');
     } catch (error) {

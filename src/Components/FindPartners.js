@@ -30,7 +30,7 @@ function FindPartners({ partners }) {
     // Fetch current user's city and profile
     const fetchCurrentUserData = async () => {
       if (auth.currentUser) {
-        const userRef = doc(db, 'users', auth.currentUser.uid);
+        const userRef = doc(db, 'users', auth.currentUser._id);
         const userSnap = await getDoc(userRef);
         if (userSnap.exists()) {
           const data = userSnap.data();
@@ -71,7 +71,7 @@ function FindPartners({ partners }) {
       const querySnapshot = await getDocs(q);
       const usersData = querySnapshot.docs
         .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(user => user.id !== auth.currentUser.uid);
+        .filter(user => user.id !== auth.currentUser._id);
       setUsers(usersData);
     } catch (error) {
       console.error('Error searching for partners:', error);

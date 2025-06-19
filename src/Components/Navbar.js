@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { auth, db } from '../firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import axios from 'axios';
 import './Navbar.css';
 
 function Navbar({ currentUser, onLogout }) {
@@ -9,11 +8,13 @@ function Navbar({ currentUser, onLogout }) {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      if (currentUser) {
-        const userRef = doc(db, 'users', currentUser.uid);
-        const userSnap = await getDoc(userRef);
-        if (userSnap.exists()) {
-          setProfile(userSnap.data());
+      if (currentUser && currentUser._id) { // הנחה ש-ID של המשתמש נשמר ב-_id
+        try {
+          console.log(currentUser._id)
+          const response = await axios.get(`http://localhost:5000/api/users/${currentUser._id}`);
+          setProfile(response.data);
+        } catch (error) {
+          console.error('Error fetching profile:', error);
         }
       }
     };
@@ -47,4 +48,4 @@ function Navbar({ currentUser, onLogout }) {
   );
 }
 
-export default Navbar; 
+export default Navbar;
