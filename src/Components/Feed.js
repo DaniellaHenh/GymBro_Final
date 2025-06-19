@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './Feed.css';
 import axios from 'axios';
-
+import { useNavigate } from 'react-router-dom';
 function Feed() {
   const [posts, setPosts] = useState([]);
   const [newPost, setNewPost] = useState('');
@@ -9,7 +9,7 @@ function Feed() {
   const [activeTab, setActiveTab] = useState('myPosts');
   const [userProfile, setUserProfile] = useState(null);
   const [userGroups, setUserGroups] = useState([]);
-  
+  const navigate = useNavigate(); 
   // הנח: מזהה המשתמש הנוכחי נשמר במקום כלשהו (למשל localStorage או context)
   // תחליף את זה בהתאם למערכת שלך
   const storedUser = JSON.parse(localStorage.getItem('user'));
@@ -136,7 +136,8 @@ return (
 
     <div className="main-content">
       <div className="main-header">
-        <button className="edit-profile-btn">ערוך פרופיל</button>
+        <button className="edit-profile-btn" onClick={() => navigate('/profile')}>ערוך פרופיל</button>
+
       </div>
 
       <div className="tabs">
