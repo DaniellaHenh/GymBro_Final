@@ -3,6 +3,10 @@ import { storage } from '../firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { auth } from '../firebase';
 import './UserProfile.css';
+import axios from 'axios';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '../firebase';
+
 
 function UserProfile() {
   const [profile, setProfile] = useState({
