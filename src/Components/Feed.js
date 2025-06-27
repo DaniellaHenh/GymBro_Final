@@ -9,7 +9,10 @@ function Feed() {
   const [activeTab, setActiveTab] = useState('myPosts');
   const [userProfile, setUserProfile] = useState(null);
   const [userGroups, setUserGroups] = useState([]);
+<<<<<<< HEAD
   const [allGroups, setAllGroups] = useState([]);
+=======
+>>>>>>> 1e1398ecff8698adaefc4afdf5c3b04ee9d901ec
   const navigate = useNavigate(); 
   // הנח: מזהה המשתמש הנוכחי נשמר במקום כלשהו (למשל localStorage או context)
   // תחליף את זה בהתאם למערכת שלך
@@ -77,6 +80,7 @@ function Feed() {
   const myPosts = posts.filter(post => post.userId === currentUserId);
   const recentPosts = posts;
 
+<<<<<<< HEAD
   useEffect(() => {
     const fetchAllGroups = async () => {
       try {
@@ -108,6 +112,8 @@ function Feed() {
     }
   };
 
+=======
+>>>>>>> 1e1398ecff8698adaefc4afdf5c3b04ee9d901ec
 return (
   <div className="feed-dashboard" dir="rtl">
     <div className="sidebar">
@@ -158,6 +164,7 @@ return (
           {(userGroups.length > 0 ? userGroups : []).map((group) => (
             <div className="group-item" key={group.name || group}>
               <span className="group-icon">👥</span>
+<<<<<<< HEAD
               <span
                 className="group-name-link"
                 style={{ color: '#4e8c85', cursor: 'pointer', textDecoration: 'underline' }}
@@ -165,10 +172,14 @@ return (
               >
                 {group.name || group}
               </span>
+=======
+              <span className="group-name">{group.name || group}</span>
+>>>>>>> 1e1398ecff8698adaefc4afdf5c3b04ee9d901ec
               {group.members && <span className="group-members">{group.members} חברים</span>}
             </div>
           ))}
         </div>
+<<<<<<< HEAD
         <div className="groups-title">כל הקבוצות</div>
         <div className="groups-list">
           {allGroups.map(group => (
@@ -188,6 +199,8 @@ return (
             </div>
           ))}
         </div>
+=======
+>>>>>>> 1e1398ecff8698adaefc4afdf5c3b04ee9d901ec
       </div>
     </div>
 

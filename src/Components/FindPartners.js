@@ -4,7 +4,10 @@ import { db } from '../firebase';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { auth } from '../firebase';
 import './FindPartners.css';
+<<<<<<< HEAD
 import { useNavigate } from 'react-router-dom';
+=======
+>>>>>>> 1e1398ecff8698adaefc4afdf5c3b04ee9d901ec
 
 function FindPartners({ partners }) {
   const [filters, setFilters] = useState({
@@ -21,12 +24,16 @@ function FindPartners({ partners }) {
   const [userLocation, setUserLocation] = useState(null);
   const [distance, setDistance] = useState('');
   const [filteredPartners, setFilteredPartners] = useState([]);
+<<<<<<< HEAD
   const navigate = useNavigate();
+=======
+>>>>>>> 1e1398ecff8698adaefc4afdf5c3b04ee9d901ec
 
   const workoutTypes = ['Strength Training', 'Running', 'Yoga', 'CrossFit', 'Swimming', 'Cycling', 'HIIT', 'Pilates'];
   const experienceLevels = ['Beginner', 'Intermediate', 'Advanced'];
   const timeSlots = ['Morning (6-9)', 'Late Morning (9-12)', 'Afternoon (12-3)', 'Late Afternoon (3-6)', 'Evening (6-9)'];
   const distanceOptions = [5, 10, 20, 50];
+<<<<<<< HEAD
   const storedUser = JSON.parse(localStorage.getItem('user'));
   const currentUserId = storedUser?._id || null;
   console.log(currentUserId);
@@ -46,6 +53,25 @@ function FindPartners({ partners }) {
     };
     fetchUserProfile();
   }, [currentUserId]);
+=======
+
+  useEffect(() => {
+    // Fetch current user's city and profile
+    const fetchCurrentUserData = async () => {
+      if (auth.currentUser) {
+        const userRef = doc(db, 'users', auth.currentUser._id);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          const data = userSnap.data();
+          setCurrentUserCity(data.location || '');
+          setUserProfile(data);
+          if (data.groups) setUserGroups(data.groups);
+        }
+      }
+    };
+    fetchCurrentUserData();
+  }, []);
+>>>>>>> 1e1398ecff8698adaefc4afdf5c3b04ee9d901ec
 
   const handleFilterChange = (e) => {
     const { name, value } = e.target;
@@ -175,10 +201,14 @@ function FindPartners({ partners }) {
         <div className="profile-card">
           <div className="profile-avatar">
             {userProfile?.profilePicture ? (
+<<<<<<< HEAD
               <img
                 src={userProfile.profilePicture}
                 alt={`${userProfile.firstName || ''} ${userProfile.lastName || ''}`}
               />
+=======
+              <img src={userProfile.profilePicture} alt={userProfile.name || userProfile.firstName} />
+>>>>>>> 1e1398ecff8698adaefc4afdf5c3b04ee9d901ec
             ) : (
               <div className="avatar-placeholder" />
             )}
@@ -198,6 +228,7 @@ function FindPartners({ partners }) {
         <div className="groups-card">
           <div className="groups-title">הקבוצות שלי</div>
           <div className="groups-list">
+<<<<<<< HEAD
             {userGroups && userGroups.length > 0 && (
               <div className="groups-section">
                 <h3>הקבוצות שלי</h3>
@@ -215,6 +246,15 @@ function FindPartners({ partners }) {
                 ))}
               </div>
             )}
+=======
+            {(userGroups.length > 0 ? userGroups : []).map(group => (
+              <div className="group-item" key={group.name || group}>
+                <span className="group-icon">👥</span>
+                <span className="group-name">{group.name || group}</span>
+                {group.members && <span className="group-members">{group.members} חברים</span>}
+              </div>
+            ))}
+>>>>>>> 1e1398ecff8698adaefc4afdf5c3b04ee9d901ec
           </div>
         </div>
       </div>

@@ -30,7 +30,10 @@ function Navbar({ currentUser, onLogout }) {
         <Link to="/feed" className="nav-link">דף הבית</Link>
         <Link to="/find-partners" className="nav-link">חיפוש שותפים</Link>
         <Link to="/profile" className="nav-link">פרופיל</Link>
+<<<<<<< HEAD
         <Link to="/create-group" className="nav-link">צור קבוצה</Link>
+=======
+>>>>>>> 1e1398ecff8698adaefc4afdf5c3b04ee9d901ec
         {profile && (
           <div className="navbar-user">
             {profile.profilePicture ? (
