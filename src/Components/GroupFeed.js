@@ -48,6 +48,7 @@ function GroupFeed() {
         text: newPost.content,
         userId: currentUserId,
         userName: currentUserName,
+        groupId
       });
       setPosts([res.data, ...posts]);
     } catch (err) {

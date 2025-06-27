@@ -61,7 +61,7 @@ function Feed() {
         userId: currentUserId,
         userName: userProfile.name || userProfile.firstName || 'משתמש',
         likes: [],
-        comments: [],
+        comments: []
       });
 
       setNewPost('');
