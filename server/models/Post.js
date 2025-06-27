@@ -4,6 +4,7 @@ const postSchema = new mongoose.Schema({
   text: String,
   userId: String,
   userName: String,
+  groupId: String,
   likes: [String],
   comments: [String],
   createdAt: { type: Date, default: Date.now }

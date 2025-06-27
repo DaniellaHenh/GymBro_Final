@@ -96,7 +96,7 @@ function GroupFeed() {
                     alt={member.name || member.firstName || 'משתמש'}
                     className="member-avatar"
                   />
-                  <span className="group-name">{member.name || member.firstName || 'משתמש'}</span>
+                  <span className="group-name">{((member.firstName || '') + ' ' + (member.lastName || '')).trim() || member.email || member._id || 'משתמש'}</span>
                 </div>
               ))
             ) : (

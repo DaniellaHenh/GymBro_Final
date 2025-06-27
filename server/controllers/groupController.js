@@ -20,7 +20,9 @@ exports.createGroup = async (req, res) => {
 
 exports.getGroups = async (req, res) => {
   try {
-    const groups = await Group.find().populate('createdBy', 'username').populate('members', 'username');
+    const groups = await Group.find()
+      .populate('createdBy', 'firstName lastName')
+      .populate('members');
     res.json(groups);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -45,8 +47,11 @@ exports.joinGroup = async (req, res) => {
 
 exports.getGroupById = async (req, res) => {
   try {
-    const group = await Group.findById(req.params.groupId).populate('createdBy', 'username').populate('members', 'username');
+    const group = await Group.findById(req.params.groupId)
+      .populate('createdBy', 'firstName lastName')
+      .populate('members');
     if (!group) return res.status(404).json({ error: 'Group not found' });
+    console.log('Group with populated members:', JSON.stringify(group, null, 2));
     res.json(group);
   } catch (err) {
     res.status(500).json({ error: err.message });
