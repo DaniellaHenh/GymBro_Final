@@ -11,10 +11,7 @@
     "dotenv": "^16.5.0",
     "firebase": "^11.6.1",
     "firebase-admin": "^13.3.0",
-<<<<<<< HEAD
     "mongoose": "^8.16.0",
-=======
->>>>>>> 1e1398ecff8698adaefc4afdf5c3b04ee9d901ec
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.5.2",

@@ -8,11 +8,10 @@ import UserProfile from './Components/UserProfile';
 import FindPartners from './Components/FindPartners';
 import './App.css';
 import HomePage from './Components/HomePage';
-<<<<<<< HEAD
+
 import CreateGroup from './Components/CreateGroup';
 import GroupFeed from './Components/GroupFeed';
-=======
->>>>>>> 1e1398ecff8698adaefc4afdf5c3b04ee9d901ec
+
 
 function App() {
   const [currentUser, setCurrentUser] = useState(null);
@@ -60,11 +59,8 @@ function App() {
             path="/find-partners"
             element={currentUser ? <FindPartners /> : <Navigate to="/login" />}
           />
-<<<<<<< HEAD
           <Route path="/create-group" element={<CreateGroup />} />
           <Route path="/group/:groupId" element={<GroupFeed />} />
-=======
->>>>>>> 1e1398ecff8698adaefc4afdf5c3b04ee9d901ec
         </Routes>
       </div>
     </Router>
