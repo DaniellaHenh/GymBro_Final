@@ -6,6 +6,10 @@ import Signup from './Components/Signup';
 import Feed from './Components/Feed';
 import UserProfile from './Components/UserProfile';
 import FindPartners from './Components/FindPartners';
+<<<<<<< HEAD
+=======
+import SearchUsers from './Components/SearchUsers';
+>>>>>>> e901f03f6f66d8b64a01b8f87c66ce5ed7ad4863
 import './App.css';
 import HomePage from './Components/HomePage';
 
@@ -56,9 +60,23 @@ function App() {
             element={currentUser ? <UserProfile /> : <Navigate to="/login" />}
           />
           <Route
+<<<<<<< HEAD
             path="/find-partners"
             element={currentUser ? <FindPartners /> : <Navigate to="/login" />}
           />
+=======
+            path="/profile/:userId"
+            element={currentUser ? <UserProfile /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/find-partners"
+            element={currentUser ? <FindPartners /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/search-users"
+            element={currentUser ? <SearchUsers /> : <Navigate to="/login" />}
+          />
+>>>>>>> e901f03f6f66d8b64a01b8f87c66ce5ed7ad4863
           <Route path="/create-group" element={<CreateGroup />} />
           <Route path="/group/:groupId" element={<GroupFeed />} />
         </Routes>

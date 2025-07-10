@@ -90,3 +90,40 @@ exports.updateUserById = async (req, res) => {
     return res.status(500).json({ message: 'Server error' });
   }
 };
+<<<<<<< HEAD
+=======
+
+exports.searchUsers = async (req, res) => {
+  try {
+    const { query } = req.query;
+    const currentUserId = req.query.currentUserId;
+
+    if (!query || query.trim() === '') {
+      return res.json({ users: [] });
+    }
+
+    const searchRegex = new RegExp(query, 'i');
+    
+    const users = await User.find({
+      $and: [
+        { _id: { $ne: currentUserId } }, // Exclude current user
+        {
+          $or: [
+            { firstName: searchRegex },
+            { lastName: searchRegex },
+            { email: searchRegex },
+            { city: searchRegex },
+            { workoutTypes: searchRegex },
+            { experienceLevel: searchRegex }
+          ]
+        }
+      ]
+    }).select('firstName lastName email city workoutTypes experienceLevel profilePicture');
+
+    return res.json({ users });
+  } catch (err) {
+    console.error('Error searching users:', err.message);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+>>>>>>> e901f03f6f66d8b64a01b8f87c66ce5ed7ad4863
