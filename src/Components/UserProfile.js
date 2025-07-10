@@ -1,18 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { storage } from '../firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { auth } from '../firebase';
-import './UserProfile.css';
 import axios from 'axios';
-import { doc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import './UserProfile.css';
 
 function UserProfile() {
   const [profile, setProfile] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     age: '',
     gender: '',
-    location: '',
+    city: '',
     workoutTypes: [],
     experienceLevel: '',
     preferredTimes: [],
@@ -25,121 +21,82 @@ function UserProfile() {
     workoutFrequency: '',
     equipment: []
   });
-  const [loading, setLoading] = useState(true);
-  const [imageUpload, setImageUpload] = useState(null);
-  const [previewImage, setPreviewImage] = useState('');
-  const originalProfile = useRef(null);
-  const [uploading, setUploading] = useState(false);
-  const fileInputRef = useRef();
 
-  const workoutTypes = ['Strength Training', 'Running', 'Yoga', 'CrossFit', 'Swimming', 'Cycling', 'HIIT', 'Pilates'];
-  const experienceLevels = ['Beginner', 'Intermediate', 'Advanced'];
-  const timeSlots = ['Morning (6-9)', 'Late Morning (9-12)', 'Afternoon (12-3)', 'Late Afternoon (3-6)', 'Evening (6-9)'];
-  const fitnessLevels = ['Casual', 'Regular', 'Athlete', 'Professional'];
-  const workoutFrequencies = ['1-2 times/week', '3-4 times/week', '5-6 times/week', 'Daily'];
-  const equipmentOptions = ['Gym Equipment', 'Body Weight', 'Free Weights', 'Resistance Bands', 'Yoga Mat', 'Running Shoes'];
+  const [loading, setLoading] = useState(true);
+  const originalProfile = useRef(null);
 
   useEffect(() => {
+    const currentUser = JSON.parse(localStorage.getItem('user'));
+    if (!currentUser || !currentUser._id) {
+      setLoading(false);
+      return;
+    }
+
     const fetchProfile = async () => {
-      if (auth.currentUser) {
-        try {
-          const res = await axios.get(`http://localhost:5000/api/users/${auth.currentUser._id}`);
-          const data = res.data;
+      try {
+        const res = await axios.get(`http://localhost:5000/api/users/${currentUser._id}`);
+        const data = res.data;
 
-          const normalized = {
-            name: data.name || '',
-            location: data.location || '',
-            age: data.age || '',
-            gender: data.gender || '',
-            workoutTypes: data.workoutTypes || [],
-            experienceLevel: data.experienceLevel || '',
-            preferredTimes: data.preferredTimes || [],
-            equipment: data.equipment || [],
-            profilePicture: data.profilePicture || '',
-            description: data.description || '',
-            workoutGoals: data.workoutGoals || '',
-            fitnessLevel: data.fitnessLevel || '',
-            favoriteExercises: data.favoriteExercises || [],
-            workoutFrequency: data.workoutFrequency || '',
-            bio: data.bio || ''
-          };
+        const normalized = {
+          firstName: data.firstName || '',
+          lastName: data.lastName || '',
+          city: data.city || '',
+          age: data.age || '',
+          gender: data.gender || '',
+          workoutTypes: data.workoutTypes || [],
+          experienceLevel: data.experienceLevel || '',
+          preferredTimes: data.availableTimes || [],
+          equipment: data.equipment || [],
+          profilePicture: data.profilePicture || '',
+          description: data.description || '',
+          workoutGoals: data.workoutGoals || '',
+          fitnessLevel: data.fitnessLevel || '',
+          favoriteExercises: data.favoriteExercises || [],
+          workoutFrequency: data.workoutFrequency || '',
+          bio: data.bio || ''
+        };
 
-          setProfile(normalized);
-          originalProfile.current = normalized;
-          setPreviewImage(normalized.profilePicture || '');
-        } catch (err) {
-          console.error('שגיאה בטעינת פרופיל:', err);
-        }
+        setProfile(normalized);
+        originalProfile.current = normalized;
+      } catch (err) {
+        console.error('Error loading profile:', err);
       }
       setLoading(false);
     };
+
     fetchProfile();
-  }, [auth.currentUser]);
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setProfile(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleWorkoutTypeChange = (type) => {
-    setProfile(prev => ({
-      ...prev,
-      workoutTypes: prev.workoutTypes.includes(type)
-        ? prev.workoutTypes.filter(t => t !== type)
-        : [...prev.workoutTypes, type]
-    }));
-  };
-
-  const handleTimeSlotChange = (time) => {
-    setProfile(prev => ({
-      ...prev,
-      preferredTimes: prev.preferredTimes.includes(time)
-        ? prev.preferredTimes.filter(t => t !== time)
-        : [...prev.preferredTimes, time]
-    }));
-  };
-
-  const handleEquipmentChange = (equipment) => {
-    setProfile(prev => ({
-      ...prev,
-      equipment: prev.equipment.includes(equipment)
-        ? prev.equipment.filter(e => e !== equipment)
-        : [...prev.equipment, equipment]
-    }));
-  };
-
-  const handleImageSelectAndUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setImageUpload(file);
-    setPreviewImage(URL.createObjectURL(file));
-    setUploading(true);
-    try {
-      const imageRef = ref(storage, `profilePictures/${auth.currentUser._id}`);
-      await uploadBytes(imageRef, file);
-      const url = await getDownloadURL(imageRef);
-      setProfile(prev => ({ ...prev, profilePicture: url }));
-      setPreviewImage(url);
-      // Update Firestore with new profilePicture URL
-      const userRef = doc(db, 'users', auth.currentUser._id);
-      await updateDoc(userRef, { profilePicture: url });
-      alert('התמונה הועלתה בהצלחה!');
-    } catch (error) {
-      console.error('Error uploading image:', error);
-      alert('שגיאה בהעלאת התמונה');
-    }
-    setUploading(false);
+  const handleCheckboxChange = (field, value) => {
+    setProfile(prev => {
+      const currentArray = prev[field] || [];
+      if (currentArray.includes(value)) {
+        return { ...prev, [field]: currentArray.filter(item => item !== value) };
+      } else {
+        return { ...prev, [field]: [...currentArray, value] };
+      }
+    });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const currentUser = JSON.parse(localStorage.getItem('user'));
+    if (!currentUser || !currentUser._id) {
+      alert('משתמש לא מחובר');
+      return;
+    }
     const isChanged = JSON.stringify(profile) !== JSON.stringify(originalProfile.current);
     if (!isChanged) {
       alert('לא בוצעו שינויים בפרופיל');
       return;
     }
     try {
-      await axios.put(`http://localhost:5000/api/users/${auth.currentUser._id}`, profile);
+      await axios.put(`http://localhost:5000/api/users/${currentUser._id}`, profile);
       originalProfile.current = profile;
       alert('הפרופיל עודכן בהצלחה!');
     } catch (error) {
@@ -148,178 +105,126 @@ function UserProfile() {
     }
   };
 
-  if (loading) {
-    return <div className="loading">Loading profile...</div>;
-  }
+  const workoutTypesOptions = ['הרמת משקולות', 'ריצה', 'יוגה', 'קרוספיט', 'שחייה', 'אופניים', 'אימון אינטרוולים', 'פילאטיס'];
+  const experienceLevelsOptions = ['מתחיל', 'בינוני', 'מתקדם'];
+  const preferredTimesOptions = ['בוקר (6-9)', 'בוקר מאוחר (9-12)', 'צהריים (12-3)', 'אחר הצהריים (3-6)', 'ערב (6-9)', 'לילה (6-9)'];
+  const equipmentOptions = ['ציוד חדר כושר', 'משקל גוף', 'משקולות חופשיים', 'גומיות התנגדות', 'מזרן יוגה', 'נעלי ריצה'];
 
-  return (
-    <div className="profile-dashboard" dir="rtl">
-      <div className="profile-card editable-profile-card">
-        <form onSubmit={handleSubmit}>
-          <div className="profile-avatar-edit-section">
-            <div className="profile-avatar">
-              {previewImage ? (
-                <img src={previewImage} alt="Profile" className="profile-picture" />
-              ) : (
-                <div className="avatar-placeholder">
-                  <span>הוסף תמונה</span>
+  if (loading) return <div>טוען פרופיל...</div>;
+
+ return (
+    <div className="profile-page" dir="rtl">
+      <div className="profile-dashboard">
+        <div className="profile-card editable-profile-card">
+          <h2 style={{ textAlign: 'center', marginBottom: '2rem', color: '#333' }}>עריכת פרופיל</h2>
+          <form onSubmit={handleSubmit}>
+            <div className="profile-form-grid">
+              <div className="form-group">
+                <label>שם פרטי</label>
+                <input type="text" name="firstName" value={profile.firstName} onChange={handleInputChange} required />
+              </div>
+
+              <div className="form-group">
+                <label>שם משפחה</label>
+                <input type="text" name="lastName" value={profile.lastName} onChange={handleInputChange} required />
+              </div>
+
+              <div className="form-group">
+                <label>עיר</label>
+                <input type="text" name="city" value={profile.city} onChange={handleInputChange} />
+              </div>
+
+              <div className="form-group">
+                <label>גיל</label>
+                <input type="number" name="age" value={profile.age || ''} onChange={handleInputChange} />
+              </div>
+
+              <div className="form-group">
+                <label>מין</label>
+                <select name="gender" value={profile.gender || ''} onChange={handleInputChange}>
+                  <option value="">בחר</option>
+                  <option value="male">זכר</option>
+                  <option value="female">נקבה</option>
+                  <option value="other">אחר</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>רמת ניסיון</label>
+                <select name="experienceLevel" value={profile.experienceLevel || ''} onChange={handleInputChange}>
+                  <option value="">בחר</option>
+                  {experienceLevelsOptions.map(level => (
+                    <option key={level} value={level}>{level}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>סוגי אימון</label>
+                <div className="checkbox-group">
+                  {workoutTypesOptions.map(type => (
+                    <label key={type} className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={profile.workoutTypes?.includes(type) || false}
+                        onChange={() => handleCheckboxChange('workoutTypes', type)}
+                      />
+                      <span>{type}</span>
+                    </label>
+                  ))}
                 </div>
-              )}
-            </div>
-            <div className="image-upload-controls">
-              <input
-                type="file"
-                ref={fileInputRef}
-                style={{ display: 'none' }}
-                onChange={handleImageSelectAndUpload}
-                accept="image/*"
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current && fileInputRef.current.click()}
-                disabled={uploading}
-              >
-                {profile.profilePicture ? 'עדכן תמונה' : 'העלה תמונה'}
-              </button>
-            </div>
-          </div>
+              </div>
 
-          <div className="profile-form-grid">
-            <div className="form-group">
-              <label>שם</label>
-              <input
-                type="text"
-                name="name"
-                value={profile.name}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>עיר</label>
-              <input
-                type="text"
-                name="location"
-                value={profile.location}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>גיל</label>
-              <input
-                type="number"
-                name="age"
-                value={profile.age}
-                onChange={handleInputChange}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label>מין</label>
-              <select name="gender" value={profile.gender} onChange={handleInputChange} required>
-                <option value="">בחר</option>
-                <option value="male">זכר</option>
-                <option value="female">נקבה</option>
-                <option value="other">אחר</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label>רמת ניסיון</label>
-              <select name="experienceLevel" value={profile.experienceLevel} onChange={handleInputChange} required>
-                <option value="">בחר</option>
-                {experienceLevels.map(level => (
-                  <option key={level} value={level.toLowerCase()}>{level === 'Beginner' ? 'מתחיל' : level === 'Intermediate' ? 'בינוני' : 'מתקדם'}</option>
-                ))}
-              </select>
-            </div>
-            <div className="form-group">
-              <label>סוגי אימון</label>
-              <div className="checkbox-group">
-                {workoutTypes.map(type => (
-                  <label key={type} className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={profile.workoutTypes.includes(type)}
-                      onChange={() => handleWorkoutTypeChange(type)}
-                    />
-                    {type === 'Strength Training' ? 'אימון כוח' :
-                     type === 'Running' ? 'ריצה' :
-                     type === 'Yoga' ? 'יוגה' :
-                     type === 'CrossFit' ? 'קרוספיט' :
-                     type === 'Swimming' ? 'שחייה' :
-                     type === 'Cycling' ? 'אופניים' :
-                     type === 'HIIT' ? 'אימון אינטרוולים' :
-                     type === 'Pilates' ? 'פילאטיס' : type}
-                  </label>
-                ))}
+              <div className="form-group">
+                <label>שעות אימון מועדפות</label>
+                <div className="checkbox-group">
+                  {preferredTimesOptions.map(time => (
+                    <label key={time} className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={profile.preferredTimes?.includes(time) || false}
+                        onChange={() => handleCheckboxChange('preferredTimes', time)}
+                      />
+                      <span>{time}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label>ציוד זמין</label>
+                <div className="checkbox-group">
+                  {equipmentOptions.map(eq => (
+                    <label key={eq} className="checkbox-label">
+                      <input
+                        type="checkbox"
+                        checked={profile.equipment?.includes(eq) || false}
+                        onChange={() => handleCheckboxChange('equipment', eq)}
+                      />
+                      <span>{eq}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-group full-width">
+                <label>תיאור</label>
+                <textarea name="description" value={profile.description || ''} onChange={handleInputChange} rows="3" />
+              </div>
+
+              <div className="form-group full-width">
+                <label>מטרות אימון</label>
+                <textarea name="workoutGoals" value={profile.workoutGoals || ''} onChange={handleInputChange} rows="2" />
               </div>
             </div>
-            <div className="form-group">
-              <label>שעות אימון מועדפות</label>
-              <div className="checkbox-group">
-                {timeSlots.map(time => (
-                  <label key={time} className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={profile.preferredTimes.includes(time)}
-                      onChange={() => handleTimeSlotChange(time)}
-                    />
-                    {time === 'Morning (6-9)' ? 'בוקר (6-9)' :
-                     time === 'Late Morning (9-12)' ? 'בוקר מאוחר (9-12)' :
-                     time === 'Afternoon (12-3)' ? 'צהריים (12-3)' :
-                     time === 'Late Afternoon (3-6)' ? 'אחר הצהריים (3-6)' :
-                     time === 'Evening (6-9)' ? 'ערב (6-9)' : time}
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div className="form-group">
-              <label>ציוד זמין</label>
-              <div className="checkbox-group">
-                {equipmentOptions.map(equipment => (
-                  <label key={equipment} className="checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={profile.equipment.includes(equipment)}
-                      onChange={() => handleEquipmentChange(equipment)}
-                    />
-                    {equipment === 'Gym Equipment' ? 'ציוד חדר כושר' :
-                     equipment === 'Body Weight' ? 'משקל גוף' :
-                     equipment === 'Free Weights' ? 'משקולות חופשיים' :
-                     equipment === 'Resistance Bands' ? 'גומיות התנגדות' :
-                     equipment === 'Yoga Mat' ? 'מזרן יוגה' :
-                     equipment === 'Running Shoes' ? 'נעלי ריצה' : equipment}
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div className="form-group">
-              <label>תיאור</label>
-              <textarea
-                name="description"
-                value={profile.description}
-                onChange={handleInputChange}
-                placeholder="ספר על עצמך ועל מסע הכושר שלך"
-                rows="3"
-              />
-            </div>
-            <div className="form-group">
-              <label>מטרות אימון</label>
-              <textarea
-                name="workoutGoals"
-                value={profile.workoutGoals}
-                onChange={handleInputChange}
-                placeholder="מהן מטרות הכושר שלך?"
-                rows="2"
-              />
-            </div>
-          </div>
-          <button type="submit" className="save-button">שמור פרופיל</button>
-        </form>
+
+            <button type="submit" className="save-button">שמור פרופיל</button>
+          </form>
+        </div>
       </div>
     </div>
   );
 }
 
-export default UserProfile; 
+export default UserProfile;
+

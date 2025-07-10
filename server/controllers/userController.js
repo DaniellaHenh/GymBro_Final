@@ -1,126 +1,262 @@
-const User = require('../models/User');
+import React, { useState, useEffect, useRef } from 'react';
+import axios from 'axios';
+import './UserProfile.css';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { storage } from '../firebase';
 
-exports.handleUserCommand = async (req, res) => {
-  const { command, data } = req.body;
+function UserProfile() {
+  const [profile, setProfile] = useState({
+    name: '',
+    age: '',
+    gender: '',
+    location: '',
+    workoutTypes: [],
+    experienceLevel: '',
+    preferredTimes: [],
+    bio: '',
+    profilePicture: '',
+    description: '',
+    workoutGoals: '',
+    fitnessLevel: '',
+    favoriteExercises: [],
+    workoutFrequency: '',
+    equipment: []
+  });
 
-  try {
-    switch (command) {
-      case 'insert': {
-        const newUser = new User(data);
-        await newUser.save();
-        return res.json({ message: 'User inserted successfully', user: newUser });
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [previewImage, setPreviewImage] = useState('');
+  const originalProfile = useRef(null);
+  const fileInputRef = useRef();
+  const currentUser = JSON.parse(localStorage.getItem("currentUser"));
+
+  const workoutTypes = ['Strength Training', 'Running', 'Yoga', 'CrossFit', 'Swimming', 'Cycling', 'HIIT', 'Pilates'];
+  const experienceLevels = ['Beginner', 'Intermediate', 'Advanced'];
+  const timeSlots = ['Morning (6-9)', 'Late Morning (9-12)', 'Afternoon (12-3)', 'Late Afternoon (3-6)', 'Evening (6-9)'];
+  const equipmentOptions = ['Gym Equipment', 'Body Weight', 'Free Weights', 'Resistance Bands', 'Yoga Mat', 'Running Shoes'];
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!currentUser || !currentUser._id) {
+        setLoading(false);
+        return;
       }
 
-      case 'select': {
-        const users = await User.find({});
-        return res.json({ message: 'Users fetched', users });
+      try {
+        const res = await axios.get(`http://localhost:5000/api/users/${currentUser._id}`);
+        const data = res.data;
+
+        const normalized = {
+          name: data.name || '',
+          location: data.location || '',
+          age: data.age || '',
+          gender: data.gender || '',
+          workoutTypes: data.workoutTypes || [],
+          experienceLevel: data.experienceLevel || '',
+          preferredTimes: data.preferredTimes || [],
+          equipment: data.equipment || [],
+          profilePicture: data.profilePicture || '',
+          description: data.description || '',
+          workoutGoals: data.workoutGoals || '',
+          fitnessLevel: data.fitnessLevel || '',
+          favoriteExercises: data.favoriteExercises || [],
+          workoutFrequency: data.workoutFrequency || '',
+          bio: data.bio || ''
+        };
+
+        setProfile(normalized);
+        originalProfile.current = normalized;
+        setPreviewImage(normalized.profilePicture || '');
+      } catch (err) {
+        console.error('שגיאה בטעינת פרופיל:', err);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      case 'update': {
-        const updatedUser = await User.findByIdAndUpdate(
-          data.userId, // כאן אתה צריך לוודא שב data.userId זה ה-_id של MongoDB
-          { email: data.newEmail },
-          { new: true }
-        );
-        if (!updatedUser) return res.status(404).json({ message: 'User not found' });
-        return res.json({ message: 'User updated', user: updatedUser });
-      }
+    fetchProfile();
+  }, [currentUser]);
 
-      case 'delete': {
-        const deletedUser = await User.findByIdAndDelete(data.userId);
-        if (!deletedUser) return res.status(404).json({ message: 'User not found' });
-        return res.json({ message: 'User deleted' });
-      }
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setProfile(prev => ({ ...prev, [name]: value }));
+  };
 
-      case 'login': {
-        const { email, password } = data;
-        if (!email || !password) {
-          return res.status(400).json({ message: 'Missing email or password' });
-        }
-        const existingUser = await User.findOne({ email });
+  const handleCheckboxChange = (field, value) => {
+    setProfile(prev => ({
+      ...prev,
+      [field]: prev[field].includes(value)
+        ? prev[field].filter(item => item !== value)
+        : [...prev[field], value]
+    }));
+  };
 
-        if (!existingUser) {
-          return res.status(401).json({ message: 'Email not found' });
-        }
+  const handleImageSelectAndUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file || !currentUser?._id) return;
 
-        if (existingUser.password !== password) {
-          return res.status(401).json({ message: 'Incorrect password' });
-        }
-
-        return res.json({ message: 'Login successful', user: existingUser });
-      }
-
-      default:
-        return res.status(400).json({ message: 'Unknown command' });
+    setUploading(true);
+    try {
+      const imageRef = ref(storage, `profilePictures/${currentUser._id}`);
+      await uploadBytes(imageRef, file);
+      const url = await getDownloadURL(imageRef);
+      setProfile(prev => ({ ...prev, profilePicture: url }));
+      setPreviewImage(url);
+      alert('התמונה הועלתה בהצלחה!');
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      alert('שגיאה בהעלאת התמונה');
+    } finally {
+      setUploading(false);
     }
-  } catch (error) {
-    console.error(error);
-    return res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
+  };
 
-exports.getUserById = async (req, res) => {
-  try {
-    const id = req.params.id;
-    const user = await User.findById(id);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+    if (!currentUser?._id) return;
+
+    const isChanged = JSON.stringify(profile) !== JSON.stringify(originalProfile.current);
+    if (!isChanged) {
+      alert('לא בוצעו שינויים בפרופיל');
+      return;
     }
 
-    return res.json(user);
-  } catch (err) {
-    console.error('Error fetching user:', err.message);
-    return res.status(500).json({ message: 'Server error' });
-  }
-};
-
-exports.updateUserById = async (req, res) => {
-  try {
-    const id = req.params.id;
-    const updatedUser = await User.findByIdAndUpdate(id, req.body, { new: true });
-
-    if (!updatedUser) {
-      return res.status(404).json({ message: 'User not found' });
+    try {
+      const res = await axios.put(`http://localhost:5000/api/users/${currentUser._id}`, profile);
+      originalProfile.current = profile;
+      alert('הפרופיל עודכן בהצלחה!');
+    } catch (err) {
+      console.error('Error updating profile:', err);
+      alert('שגיאה בעדכון הפרופיל');
     }
+  };
 
-    return res.json({ message: 'User updated', user: updatedUser });
-  } catch (err) {
-    console.error('Error updating user:', err.message);
-    return res.status(500).json({ message: 'Server error' });
-  }
-};
+  if (loading) return <div className="loading">טוען פרופיל...</div>;
 
-exports.searchUsers = async (req, res) => {
-  try {
-    const { query } = req.query;
-    const currentUserId = req.query.currentUserId;
+  return (
+    <div className="profile-dashboard" dir="rtl">
+      <div className="profile-card editable-profile-card">
+        <form onSubmit={handleSubmit}>
+          <div className="profile-avatar-edit-section">
+            <div className="profile-avatar">
+              {previewImage ? (
+                <img src={previewImage} alt="Profile" className="profile-picture" />
+              ) : (
+                <div className="avatar-placeholder"><span>הוסף תמונה</span></div>
+              )}
+            </div>
+            <div className="image-upload-controls">
+              <input
+                type="file"
+                ref={fileInputRef}
+                style={{ display: 'none' }}
+                onChange={handleImageSelectAndUpload}
+                accept="image/*"
+              />
+              <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}>
+                {profile.profilePicture ? 'עדכן תמונה' : 'העלה תמונה'}
+              </button>
+            </div>
+          </div>
 
-    if (!query || query.trim() === '') {
-      return res.json({ users: [] });
-    }
+          <div className="profile-form-grid">
+            <div className="form-group">
+              <label>שם</label>
+              <input name="name" value={profile.name} onChange={handleInputChange} required />
+            </div>
+            <div className="form-group">
+              <label>עיר</label>
+              <input name="location" value={profile.location} onChange={handleInputChange} required />
+            </div>
+            <div className="form-group">
+              <label>גיל</label>
+              <input type="number" name="age" value={profile.age} onChange={handleInputChange} required />
+            </div>
+            <div className="form-group">
+              <label>מין</label>
+              <select name="gender" value={profile.gender} onChange={handleInputChange} required>
+                <option value="">בחר</option>
+                <option value="male">זכר</option>
+                <option value="female">נקבה</option>
+                <option value="other">אחר</option>
+              </select>
+            </div>
 
-    const searchRegex = new RegExp(query, 'i');
-    
-    const users = await User.find({
-      $and: [
-        { _id: { $ne: currentUserId } }, // Exclude current user
-        {
-          $or: [
-            { firstName: searchRegex },
-            { lastName: searchRegex },
-            { email: searchRegex },
-            { city: searchRegex },
-            { workoutTypes: searchRegex },
-            { experienceLevel: searchRegex }
-          ]
-        }
-      ]
-    }).select('firstName lastName email city workoutTypes experienceLevel profilePicture');
+            <div className="form-group">
+              <label>רמת ניסיון</label>
+              <select name="experienceLevel" value={profile.experienceLevel} onChange={handleInputChange} required>
+                <option value="">בחר</option>
+                {experienceLevels.map(level => (
+                  <option key={level} value={level.toLowerCase()}>{level}</option>
+                ))}
+              </select>
+            </div>
 
-    return res.json({ users });
-  } catch (err) {
-    console.error('Error searching users:', err.message);
-    return res.status(500).json({ message: 'Server error' });
-  }
-};
+            <div className="form-group">
+              <label>סוגי אימון</label>
+              <div className="checkbox-group">
+                {workoutTypes.map(type => (
+                  <label key={type}>
+                    <input
+                      type="checkbox"
+                      checked={profile.workoutTypes.includes(type)}
+                      onChange={() => handleCheckboxChange('workoutTypes', type)}
+                    />
+                    {type}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>שעות אימון מועדפות</label>
+              <div className="checkbox-group">
+                {timeSlots.map(time => (
+                  <label key={time}>
+                    <input
+                      type="checkbox"
+                      checked={profile.preferredTimes.includes(time)}
+                      onChange={() => handleCheckboxChange('preferredTimes', time)}
+                    />
+                    {time}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>ציוד זמין</label>
+              <div className="checkbox-group">
+                {equipmentOptions.map(equipment => (
+                  <label key={equipment}>
+                    <input
+                      type="checkbox"
+                      checked={profile.equipment.includes(equipment)}
+                      onChange={() => handleCheckboxChange('equipment', equipment)}
+                    />
+                    {equipment}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label>תיאור</label>
+              <textarea name="description" value={profile.description} onChange={handleInputChange} rows="3" />
+            </div>
+
+            <div className="form-group">
+              <label>מטרות אימון</label>
+              <textarea name="workoutGoals" value={profile.workoutGoals} onChange={handleInputChange} rows="2" />
+            </div>
+          </div>
+
+          <button type="submit" className="save-button">שמור פרופיל</button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+export default UserProfile;
