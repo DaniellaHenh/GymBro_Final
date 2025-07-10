@@ -6,12 +6,14 @@ import Signup from './Components/Signup';
 import Feed from './Components/Feed';
 import UserProfile from './Components/UserProfile';
 import FindPartners from './Components/FindPartners';
+
 import SearchUsers from './Components/SearchUsers';
 import './App.css';
 import HomePage from './Components/HomePage';
 
 import CreateGroup from './Components/CreateGroup';
 import GroupFeed from './Components/GroupFeed';
+import Chat from './Components/Chat';
 
 
 function App() {
@@ -57,6 +59,10 @@ function App() {
             element={currentUser ? <UserProfile /> : <Navigate to="/login" />}
           />
           <Route
+            path="/find-partners"
+            element={currentUser ? <FindPartners /> : <Navigate to="/login" />}
+          />
+          <Route
             path="/profile/:userId"
             element={currentUser ? <UserProfile /> : <Navigate to="/login" />}
           />
@@ -70,6 +76,7 @@ function App() {
           />
           <Route path="/create-group" element={<CreateGroup />} />
           <Route path="/group/:groupId" element={<GroupFeed />} />
+          <Route path="/chat" element={<Chat />} />
         </Routes>
       </div>
     </Router>

@@ -124,3 +124,12 @@ exports.searchUsers = async (req, res) => {
     return res.status(500).json({ message: 'Server error' });
   }
 };
+
+exports.getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find({});
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};

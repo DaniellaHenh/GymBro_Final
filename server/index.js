@@ -5,7 +5,7 @@ const connectDB = require('./config/db');
 const userRoutes = require('./routes/userRoutes');
 const postRoutes = require('./routes/postRoutes');
 const groupRoutes = require('./routes/groupRoutes');
-
+const messageRoutes = require('./routes/messageRoutes');
 
 
 const app = express();
@@ -19,7 +19,7 @@ connectDB();
 app.use('/api/users', userRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/groups', groupRoutes);
-
+app.use('/api/messages', messageRoutes);
 
 
 const PORT = 5000;

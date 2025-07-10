@@ -32,6 +32,7 @@ function Navbar({ currentUser, onLogout }) {
         <Link to="/search-users" className="nav-link">חיפוש משתמשים</Link>
         <Link to="/profile" className="nav-link">פרופיל</Link>
         <Link to="/create-group" className="nav-link">צור קבוצה</Link>
+        <Link to="/chat" className="nav-link">Chat</Link>
 
         {profile && (
           <div className="navbar-user">
