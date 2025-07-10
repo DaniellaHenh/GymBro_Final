@@ -7,10 +7,6 @@ import axios from 'axios';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
-<<<<<<< HEAD
-
-=======
->>>>>>> e901f03f6f66d8b64a01b8f87c66ce5ed7ad4863
 function UserProfile() {
   const [profile, setProfile] = useState({
     name: '',
@@ -45,41 +41,6 @@ function UserProfile() {
 
   useEffect(() => {
     const fetchProfile = async () => {
-<<<<<<< HEAD
-    if (auth.currentUser) {
-      try {
-        const res = await axios.get(`http://localhost:5000/api/users/${auth.currentUser._id}`);
-        const data = res.data;
-
-        const normalized = {
-          name: data.name || '',
-          location: data.location || '',
-          age: data.age || '',
-          gender: data.gender || '',
-          workoutTypes: data.workoutTypes || [],
-          experienceLevel: data.experienceLevel || '',
-          preferredTimes: data.preferredTimes || [],
-          equipment: data.equipment || [],
-          profilePicture: data.profilePicture || '',
-          description: data.description || '',
-          workoutGoals: data.workoutGoals || '',
-          fitnessLevel: data.fitnessLevel || '',
-          favoriteExercises: data.favoriteExercises || [],
-          workoutFrequency: data.workoutFrequency || '',
-          bio: data.bio || ''
-        };
-
-        setProfile(normalized);
-        originalProfile.current = normalized;
-        setPreviewImage(normalized.profilePicture || '');
-      } catch (err) {
-        console.error('שגיאה בטעינת פרופיל:', err);
-      }
-    }
-    setLoading(false);
-  };
-  fetchProfile();
-=======
       if (auth.currentUser) {
         try {
           const res = await axios.get(`http://localhost:5000/api/users/${auth.currentUser._id}`);
@@ -113,7 +74,6 @@ function UserProfile() {
       setLoading(false);
     };
     fetchProfile();
->>>>>>> e901f03f6f66d8b64a01b8f87c66ce5ed7ad4863
   }, [auth.currentUser]);
 
   const handleInputChange = (e) => {

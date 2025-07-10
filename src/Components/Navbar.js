@@ -29,10 +29,7 @@ function Navbar({ currentUser, onLogout }) {
       <div className="navbar-right">
         <Link to="/feed" className="nav-link">דף הבית</Link>
         <Link to="/find-partners" className="nav-link">חיפוש שותפים</Link>
-<<<<<<< HEAD
-=======
         <Link to="/search-users" className="nav-link">חיפוש משתמשים</Link>
->>>>>>> e901f03f6f66d8b64a01b8f87c66ce5ed7ad4863
         <Link to="/profile" className="nav-link">פרופיל</Link>
         <Link to="/create-group" className="nav-link">צור קבוצה</Link>
 

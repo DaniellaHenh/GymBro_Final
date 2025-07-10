@@ -90,8 +90,6 @@ exports.updateUserById = async (req, res) => {
     return res.status(500).json({ message: 'Server error' });
   }
 };
-<<<<<<< HEAD
-=======
 
 exports.searchUsers = async (req, res) => {
   try {
@@ -126,4 +124,3 @@ exports.searchUsers = async (req, res) => {
     return res.status(500).json({ message: 'Server error' });
   }
 };
->>>>>>> e901f03f6f66d8b64a01b8f87c66ce5ed7ad4863

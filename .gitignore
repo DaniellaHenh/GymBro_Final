@@ -1,24 +1,18 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-<<<<<<< HEAD
 /node_modules
 /.pnp
 .pnp.js
-=======
 node_modules/
 */node_modules/
->>>>>>> e901f03f6f66d8b64a01b8f87c66ce5ed7ad4863
 
 # testing
 /coverage
 
 # production
 /build
-<<<<<<< HEAD
-=======
 /dist
->>>>>>> e901f03f6f66d8b64a01b8f87c66ce5ed7ad4863
 
 # misc
 .DS_Store
@@ -32,9 +26,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # ignore general env file
-<<<<<<< HEAD
 .env
-=======
 .env
 
 # runtime data
@@ -112,4 +104,3 @@ Thumbs.db
 firebase-debug.log
 firestore-debug.log
 ui-debug.log
->>>>>>> e901f03f6f66d8b64a01b8f87c66ce5ed7ad4863
