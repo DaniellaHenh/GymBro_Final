@@ -10,6 +10,8 @@ function Feed() {
   const [userProfile, setUserProfile] = useState(null);
   const [userGroups, setUserGroups] = useState([]);
   const [allGroups, setAllGroups] = useState([]);
+  const [editingPostId, setEditingPostId] = useState(null);
+  const [editText, setEditText] = useState('');
 
   const navigate = useNavigate(); 
   // הנח: מזהה המשתמש הנוכחי נשמר במקום כלשהו (למשל localStorage או context)
@@ -19,7 +21,6 @@ function Feed() {
   console.log(currentUserId);
   
 
-  // טען פרופיל משתמש מה-API לפי currentUserId
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (currentUserId) {
@@ -36,7 +37,6 @@ function Feed() {
     fetchUserProfile();
   }, [currentUserId]);
 
-  // טען פוסטים מהשרת
   useEffect(() => {
     const fetchPosts = async () => {
       try {
@@ -66,7 +66,6 @@ function Feed() {
 
       setNewPost('');
 
-      // רענון הפוסטים לאחר הוספה
       const res = await axios.get('http://localhost:5000/api/posts');
       setPosts(res.data.posts || res.data);
     } catch (error) {
@@ -74,6 +73,53 @@ function Feed() {
     }
   };
 
+  
+  const handleEditClick = (post) => {
+    setEditingPostId(post._id || post.id); // מזהה הפוסט שנבחר לעריכה
+    setEditText(post.text); // ממלא את הטקסט הקיים ב־textarea
+  };
+
+  const handleEditSave = async () => {
+    if (!editText.trim()) {
+      alert('הטקסט לא יכול להיות ריק');
+      return;
+    }
+    try {
+      await axios.put(`http://localhost:5000/api/posts/${editingPostId}`, { text: editText });
+
+      setPosts(posts.map(post =>
+        (post._id === editingPostId || post.id === editingPostId)
+          ? { ...post, text: editText }
+          : post
+      ));
+
+      setEditingPostId(null); // יוצא ממצב עריכה
+      setEditText(''); // מאפס את הטקסט בעריכה
+    } catch (error) {
+      console.error('שגיאה בעדכון הפוסט:', error);
+      alert('לא הצלחנו לעדכן את הפוסט, נסה שוב.');
+    }
+  };
+
+  const handleEditCancel = () => {
+    setEditingPostId(null);
+    setEditText('');
+  };
+
+  const handleDeletePost = async (postId) => {
+    if (!window.confirm('אתה בטוח שברצונך למחוק את הפוסט?')) return; // אישור לפני מחיקה
+
+    try {
+      await axios.delete(`http://localhost:5000/api/posts/${postId}`);
+
+      setPosts(posts.filter(post => post._id !== postId && post.id !== postId));
+    } catch (error) {
+      console.error('שגיאה במחיקת הפוסט:', error);
+      alert('לא הצלחנו למחוק את הפוסט, נסה שוב.');
+    }
+  };
+
+  
   // סינון פוסטים לפי המשתמש הנוכחי
   const myPosts = posts.filter(post => post.userId === currentUserId);
   const recentPosts = posts;
@@ -195,7 +241,6 @@ return (
     <div className="main-content">
       <div className="main-header">
         <button className="edit-profile-btn" onClick={() => navigate('/profile')}>ערוך פרופיל</button>
-
       </div>
 
       <div className="tabs">
@@ -232,11 +277,29 @@ return (
                   </div>
                 </div>
               </div>
-              <div className="post-content">{post.text}</div>
-              <div className="post-actions">
-                <button className="post-action-btn">ערוך</button>
-                <button className="post-action-btn">מחק</button>
-              </div>
+
+              {/* מצב עריכה: אם הפוסט הוא הפוסט שנבחר לעריכה, להראות textarea וכפתורים */}
+              {editingPostId === (post._id || post.id) ? (
+                <>
+                  <textarea
+                    className="edit-post-textarea"
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                  />
+                  <div className="post-actions">
+                    <button onClick={handleEditSave} className="post-action-btn save-btn">שמור</button>
+                    <button onClick={handleEditCancel} className="post-action-btn cancel-btn">בטל</button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="post-content">{post.text}</div>
+                  <div className="post-actions">
+                    <button onClick={() => handleEditClick(post)} className="post-action-btn">ערוך</button>
+                    <button onClick={() => handleDeletePost(post._id || post.id)} className="post-action-btn">מחק</button>
+                  </div>
+                </>
+              )}
             </div>
           ))
         )}
@@ -254,6 +317,7 @@ return (
     </div>
   </div>
 );
+
 
 }
 

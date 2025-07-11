@@ -52,4 +52,19 @@ router.get('/group/:groupId', async (req, res) => {
   }
 });
 
+// מחיקת פוסט לפי מזהה
+router.delete('/:postId', async (req, res) => {
+  try {
+    const { postId } = req.params;
+    const deletedPost = await Post.findByIdAndDelete(postId);
+    if (!deletedPost) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+    res.json({ message: 'Post deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
 module.exports = router;
