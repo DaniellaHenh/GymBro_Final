@@ -54,6 +54,8 @@ const CreateGroup = () => {
               onChange={e => setDescription(e.target.value)}
               placeholder="הכנס תיאור (לא חובה)"
               rows={3}
+              style={{ maxWidth: '370px', margin: '0 auto', display: 'block' }}
+
             />
           </div>
           <button type="submit" className="create-group-button">צור</button>
