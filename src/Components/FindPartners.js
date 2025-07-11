@@ -1,35 +1,27 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios'; // For geocoding API requests
-import { db } from '../firebase';
-import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
-import { auth } from '../firebase';
+import axios from 'axios';
 import './FindPartners.css';
 import { useNavigate } from 'react-router-dom';
 
-function FindPartners({ partners }) {
+function FindPartners() {
   const [filters, setFilters] = useState({
     workoutType: '',
     experienceLevel: '',
-    distance: 20, // default km
-    timeSlot: ''
+    timeSlot: '',
+    city: ''
   });
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [currentUserCity, setCurrentUserCity] = useState('');
   const [userProfile, setUserProfile] = useState(null);
   const [userGroups, setUserGroups] = useState([]);
-  const [userLocation, setUserLocation] = useState(null);
-  const [distance, setDistance] = useState('');
-  const [filteredPartners, setFilteredPartners] = useState([]);
   const navigate = useNavigate();
 
-  const workoutTypes = ['Strength Training', 'Running', 'Yoga', 'CrossFit', 'Swimming', 'Cycling', 'HIIT', 'Pilates'];
-  const experienceLevels = ['Beginner', 'Intermediate', 'Advanced'];
-  const timeSlots = ['Morning (6-9)', 'Late Morning (9-12)', 'Afternoon (12-3)', 'Late Afternoon (3-6)', 'Evening (6-9)'];
-  const distanceOptions = [5, 10, 20, 50];
+  const workoutTypes = ['הרמת משקולות', 'ריצה', 'יוגה', 'קרוספיט', 'שחייה', 'אופניים', 'HIIT', 'פילאטיס'];
+  const timeSlots = ['בוקר (6-9)', 'בוקר מאוחר (9-12)', 'צהריים (12-15)', 'אחר הצהריים (15-18)', 'ערב (18-21)', 'לילה (21-00)'];
+  const experienceLevels = ['מתחיל', 'בינוני', 'מנוסה'];
+
   const storedUser = JSON.parse(localStorage.getItem('user'));
   const currentUserId = storedUser?._id || null;
-  console.log(currentUserId);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -37,7 +29,7 @@ function FindPartners({ partners }) {
         try {
           const res = await axios.get(`http://localhost:5000/api/users/${currentUserId}`);
           setUserProfile(res.data);
-          console.log(res.data);
+          setFilters(prev => ({ ...prev, city: res.data.city }));
           if (res.data.groups) setUserGroups(res.data.groups);
         } catch (err) {
           console.error('Error fetching user profile:', err);
@@ -54,120 +46,21 @@ function FindPartners({ partners }) {
 
   const searchPartners = async () => {
     setLoading(true);
+    
     try {
-      let q = collection(db, 'users');
-      const conditions = [];
-      if (filters.workoutType) {
-        conditions.push(where('workoutTypes', 'array-contains', filters.workoutType));
-      }
-      if (filters.experienceLevel) {
-        conditions.push(where('experienceLevel', '==', filters.experienceLevel.toLowerCase()));
-      }
-      if (filters.timeSlot) {
-        conditions.push(where('preferredTimes', 'array-contains', filters.timeSlot));
-      }
-      if (currentUserCity) {
-        conditions.push(where('location', '==', currentUserCity));
-      }
-      if (conditions.length > 0) {
-        q = query(q, ...conditions);
-      }
-      const querySnapshot = await getDocs(q);
-      const usersData = querySnapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(user => user.id !== auth.currentUser._id);
-      setUsers(usersData);
-    } catch (error) {
-      console.error('Error searching for partners:', error);
-    }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    if (currentUserCity) {
-      searchPartners();
-    }
-    // eslint-disable-next-line
-  }, [currentUserCity]);
-
-  const geocodeLocation = async (location) => {
-    try {
-      const response = await axios.get('https://maps.googleapis.com/maps/api/geocode/json', {
-        params: {
-          address: `${location}, ישראל`, // Add "Israel" for better recognition
-          key: 'af1676e1888b43f1bf86b2d7784169dc', // Replace with your API key
-        },
+      const res = await axios.post('http://localhost:5000/api/users/search-partners', {
+        workoutType: filters.workoutType,
+        availableTimes: filters.timeSlot,
+        city: filters.city
       });
-      const { lat, lng } = response.data.results[0].geometry.location;
-      return { latitude: lat, longitude: lng };
-    } catch (error) {
-      console.error('Error geocoding location:', error);
-      return null;
+
+      const filtered = res.data.filter(user => user._id !== currentUserId);
+      setUsers(filtered);
+    } catch (err) {
+      console.error('Error searching for partners:', err);
     }
-  };
-
-  const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const toRad = (value) => (value * Math.PI) / 180;
-    const R = 6371; // Radius of Earth in kilometers
-    const dLat = toRad(lat2 - lat1);
-    const dLon = toRad(lon2 - lon1);
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(toRad(lat1)) *
-        Math.cos(toRad(lat2)) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c; // Distance in kilometers
-  };
-
-  const handleSearch = async () => {
-    if (!userLocation) {
-      alert('Unable to get your location.');
-      return;
-    }
-
-    setLoading(true);
-
-    const filtered = [];
-    for (const partner of partners) {
-      if (!partner.location) continue;
-
-      const partnerCoords = await geocodeLocation(partner.location);
-      if (!partnerCoords) continue;
-
-      const distanceToPartner = calculateDistance(
-        userLocation.latitude,
-        userLocation.longitude,
-        partnerCoords.latitude,
-        partnerCoords.longitude
-      );
-
-      if (distanceToPartner <= distance) {
-        filtered.push(partner);
-      }
-    }
-
-    setFilteredPartners(filtered);
     setLoading(false);
   };
-
-  useEffect(() => {
-    const fetchUserLocation = async () => {
-      if (!partners || !Array.isArray(partners)) {
-        console.error('Partners array is undefined or not an array.');
-        return;
-      }
-
-      const currentUser = partners.find((partner) => partner.isCurrentUser); // Assuming current user is marked
-      if (currentUser && currentUser.location) {
-        const coords = await geocodeLocation(currentUser.location);
-        setUserLocation(coords);
-      }
-    };
-
-    fetchUserLocation();
-  }, [partners]);
 
   return (
     <div className="feed-dashboard" dir="rtl">
@@ -175,88 +68,68 @@ function FindPartners({ partners }) {
         <div className="profile-card">
           <div className="profile-avatar">
             {userProfile?.profilePicture ? (
-              <img
-                src={userProfile.profilePicture}
-                alt={`${userProfile.firstName || ''} ${userProfile.lastName || ''}`}
-              />
+              <img src={userProfile.profilePicture} alt="avatar" />
             ) : (
               <div className="avatar-placeholder" />
             )}
           </div>
           <div className="profile-info">
-            <div className="profile-name">{userProfile?.name || userProfile?.firstName || 'משתמש'}</div>
-            <div className="profile-city">{userProfile?.location || ''}</div>
+            <div className="profile-name">{userProfile?.firstName || 'משתמש'}</div>
+            <div className="profile-city">{userProfile?.city || ''}</div>
           </div>
           <div className="profile-section-title">פרטים אישיים</div>
           <div className="profile-details">
-            <div><span className="profile-label">רמת ניסיון:</span> {userProfile?.experienceLevel || userProfile?.experience || ''}</div>
-            <div><span className="profile-label">מיקום:</span> {userProfile?.location || ''}</div>
-            <div><span className="profile-label">סוג אימון מועדפים:</span> {(userProfile?.workoutTypes || []).map(type => <span className="profile-tag" key={type}>{type}</span>)}</div>
-            <div><span className="profile-label">שעות אימון מועדפות:</span> {(userProfile?.preferredTimes || userProfile?.times || []).map(time => <span className="profile-tag" key={time}>{time}</span>)}</div>
+            <div><span>רמת ניסיון:</span> {userProfile?.experienceLevel}</div>
+            <div><span>מיקום:</span> {userProfile?.city}</div>
+            <div><span>סוג אימון:</span> {(userProfile?.workoutTypes || []).map(type => <span className="profile-tag" key={type}>{type}</span>)}</div>
+            <div><span>שעות מועדפות:</span> {(userProfile?.availableTimes || []).map(time => <span className="profile-tag" key={time}>{time}</span>)}</div>
           </div>
         </div>
         <div className="groups-card">
           <div className="groups-title">הקבוצות שלי</div>
           <div className="groups-list">
-            {userGroups && userGroups.length > 0 && (
-              <div className="groups-section">
-                <h3>הקבוצות שלי</h3>
-                {userGroups.map((group) => (
-                  <div key={group._id} className="group-card">
-                    <span
-                      className="group-name-link"
-                      style={{ color: '#4e8c85', cursor: 'pointer', textDecoration: 'underline' }}
-                      onClick={() => navigate(`/group/${group._id}`)}
-                    >
-                      {group.name}
-                    </span>
-                    {group.members && <span className="group-members">{group.members} חברים</span>}
-                  </div>
-                ))}
+            {userGroups.map((group) => (
+              <div key={group._id} className="group-card">
+                <span
+                  className="group-name-link"
+                  onClick={() => navigate(`/group/${group._id}`)}
+                >
+                  {group.name}
+                </span>
               </div>
-            )}
+            ))}
           </div>
         </div>
       </div>
+
       <div className="main-content">
         <div className="main-header">
-          <h2 style={{margin: 0}}>חיפוש שותפים</h2>
+          <h2>חיפוש שותפים</h2>
         </div>
-        <div className="filters-section" style={{marginBottom: '2rem'}}>
+
+        <div className="filters-section">
           <div className="filters">
+            <div className="filter-group">
+              <label>עיר</label>
+              <input
+                name="city"
+                type="text"
+                value={filters.city}
+                onChange={handleFilterChange}
+              />
+            </div>
             <div className="filter-group">
               <label>סוג אימון</label>
               <select name="workoutType" value={filters.workoutType} onChange={handleFilterChange}>
                 <option value="">הכל</option>
-                {workoutTypes.map(type => (
-                  <option key={type} value={type}>{type}</option>
-                ))}
+                {workoutTypes.map(type => <option key={type} value={type}>{type}</option>)}
               </select>
             </div>
             <div className="filter-group">
-              <label>רמת ניסיון</label>
-              <select name="experienceLevel" value={filters.experienceLevel} onChange={handleFilterChange}>
-                <option value="">הכל</option>
-                {experienceLevels.map(level => (
-                  <option key={level} value={level}>{level}</option>
-                ))}
-              </select>
-            </div>
-            <div className="filter-group">
-              <label>טווח (ק"מ)</label>
-              <select name="distance" value={filters.distance} onChange={handleFilterChange}>
-                {distanceOptions.map(km => (
-                  <option key={km} value={km}>{km} ק"מ</option>
-                ))}
-              </select>
-            </div>
-            <div className="filter-group">
-              <label>זמן מועדף</label>
+              <label>שעות מועדפות</label>
               <select name="timeSlot" value={filters.timeSlot} onChange={handleFilterChange}>
                 <option value="">הכל</option>
-                {timeSlots.map(time => (
-                  <option key={time} value={time}>{time}</option>
-                ))}
+                {timeSlots.map(slot => <option key={slot} value={slot}>{slot}</option>)}
               </select>
             </div>
             <button onClick={searchPartners} className="search-button">
@@ -264,82 +137,27 @@ function FindPartners({ partners }) {
             </button>
           </div>
         </div>
-        <div className="filters-section">
-          <h2>מצא שותפים לפי מרחק</h2>
-          <div className="filters">
-            <div className="filter-group">
-              <label htmlFor="distance">מרחק (ק"מ)</label>
-              <input
-                type="number"
-                id="distance"
-                placeholder="הכנס מרחק בקילומטרים"
-                value={distance}
-                onChange={(e) => setDistance(e.target.value)}
-              />
-            </div>
-            <button className="search-button" onClick={handleSearch} disabled={loading}>
-              {loading ? 'מחפש...' : 'חפש'}
-            </button>
-          </div>
-        </div>
+
         <div className="results-section">
           {loading ? (
-            <div className="loading">מחפש שותפים...</div>
+            <div>טוען...</div>
           ) : (
             <div className="users-grid">
               {users.length === 0 ? (
-                <div className="no-results">לא נמצאו שותפים בעיר שלך</div>
+                <div>לא נמצאו שותפים</div>
               ) : (
                 users.map(user => (
-                  <div key={user.id} className="post-card user-card">
-                    <div className="post-header">
-                      <div className="post-avatar">
-                        <img
-                          src={user.profilePicture || 'https://via.placeholder.com/150'}
-                          alt={user.name}
-                          className="user-avatar"
-                        />
-                      </div>
-                      <div className="post-user-info">
-                        <div className="post-user-name">{user.name}</div>
-                        <div className="post-time">{user.location}</div>
-                      </div>
-                    </div>
-                    <div className="post-content">
-                      <p><strong>ניסיון:</strong> {user.experienceLevel}</p>
-                      <p><strong>אימונים:</strong> {(user.workoutTypes || []).join(', ')}</p>
-                      <p><strong>זמנים:</strong> {(user.preferredTimes || []).join(', ')}</p>
-                    </div>
-                    <div className="post-actions">
-                      <button className="connect-button post-action-btn">התחבר</button>
-                    </div>
+                  <div key={user._id} className="user-card">
+                    <img src={user.profilePicture || 'https://via.placeholder.com/150'} alt="avatar" />
+                    <h3>{user.firstName} {user.lastName}</h3>
+                    <p>עיר: {user.city}</p>
+                    <p>אימונים: {(user.workoutTypes || []).join(', ')}</p>
+                    <p>שעות מועדפות: {(user.availableTimes || []).join(', ')}</p>
+                    <button className="connect-button">התחבר</button>
                   </div>
                 ))
               )}
             </div>
-          )}
-        </div>
-        <div className="results-section">
-          {filteredPartners.length > 0 ? (
-            <div className="users-grid">
-              {filteredPartners.map((partner) => (
-                <div className="user-card" key={partner.id}>
-                  <img
-                    src={partner.profilePicture}
-                    alt={`${partner.name}'s avatar`}
-                    className="user-avatar"
-                  />
-                  <div className="user-info">
-                    <h3>{partner.name}</h3>
-                    <p>{partner.bio}</p>
-                    <p>מיקום: {partner.location}</p>
-                  </div>
-                  <button className="connect-button">התחבר</button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="loading">לא נמצאו שותפים במרחק המבוקש.</div>
           )}
         </div>
       </div>

@@ -22,7 +22,7 @@ function Signup() {
   const navigate = useNavigate();
 
   const workoutTypes = ['הרמת משקולות', 'ריצה', 'יוגה', 'קרוספיט', 'שחייה', 'אופניים', 'HIIT', 'פילאטיס'];
-  const timeSlots = ['בוקר (6-9)', 'צהריים (9-12)', 'אחר הצהריים (12-3)', 'ערב (3-6)', 'לילה (6-9)'];
+  const timeSlots = ['בוקר (6-9)', 'בוקר מאוחר (9-12)', 'צהריים (12-15)', 'אחר הצהריים (15-18)', 'ערב (18-21)', 'לילה (21-00)'];
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;

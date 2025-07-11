@@ -124,3 +124,39 @@ exports.searchUsers = async (req, res) => {
     return res.status(500).json({ message: 'Server error' });
   }
 };
+
+
+exports.searchByFilters = async (req, res) => {
+  try {
+    const { city, workoutType, availableTimes, experienceLevel } = req.body;
+
+    const filter = {};
+
+    if (city) {
+      filter.city = new RegExp(city, 'i'); 
+    }
+
+    if (workoutType) {
+      filter.workoutTypes = { $in: [workoutType] };
+    }
+
+    if (availableTimes) {
+      filter.availableTimes = { $in: [availableTimes] };
+    }
+
+    if (experienceLevel) {
+      filter.experienceLevel = experienceLevel;
+    }
+
+    const users = await User.find(filter).select(
+      '_id firstName lastName city workoutTypes availableTimes profilePicture experienceLevel'
+    );
+
+    return res.json(users);
+  } catch (err) {
+    console.error('Error filtering users:', err.message);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+
