@@ -42,7 +42,7 @@ function Navbar({ currentUser, onLogout }) {
           {profile.profilePicture ? (
             <img src={profile.profilePicture} alt={profile.name || profile.firstName} className="navbar-avatar" />
           ) : (
-            <div className="navbar-avatar avatar-placeholder" />
+            <img src="/default-avatar.png" alt="avatar" className="navbar-avatar" />
           )}
           <span className="navbar-username">{profile.name || profile.firstName || 'משתמש'}</span>
         </div>

@@ -166,7 +166,7 @@ return (
               alt={`${userProfile.firstName || ''} ${userProfile.lastName || ''}`}
             />
           ) : (
-            <div className="avatar-placeholder" />
+            <img src="/default-avatar.png" alt="avatar" />
           )}
         </div>
         <div className="profile-info">
@@ -268,7 +268,12 @@ return (
             <div key={post._id || post.id} className="post-card">
               <div className="post-header">
                 <div className="post-avatar">
-                  <div className="avatar-placeholder" />
+                  <img
+                    src={post.userAvatar || '/default-avatar.png'}
+                    alt={post.userName || 'משתמש'}
+                     width={36}
+                     height={36}
+                  />
                 </div>
                 <div className="post-user-info">
                   <div className="post-user-name">{post.userName || 'משתמש'}</div>
