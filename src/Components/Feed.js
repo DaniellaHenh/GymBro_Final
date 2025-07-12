@@ -172,22 +172,34 @@ return (
         </div>
         <div className="groups-title">כל הקבוצות</div>
         <div className="groups-list">
-          {allGroups.map(group => (
-            <div className="group-item" key={group._id}>
-              <span className="group-icon">👥</span>
-              <span
-                className="group-name-link"
-                style={{ color: '#4e8c85', cursor: 'pointer', textDecoration: 'underline' }}
-                onClick={() => navigate(`/group/${group._id}`)}
-              >
-                {group.name}
-              </span>
-              <span className="group-members">{group.members.length} חברים</span>
-              <button className="connect-button" onClick={() => handleJoinRequest(group._id, group.createdBy)}>
-                בקש להצטרף
-              </button>
-            </div>
-          ))}
+          {allGroups.map(group => {
+            const isMember = group.members && group.members.some(
+              member => member === currentUserId || member._id === currentUserId
+            );
+            return (
+              <div className="group-item" key={group._id}>
+                <span className="group-icon">👥</span>
+                <span
+                  className="group-name-link"
+                  style={{ color: '#4e8c85', cursor: 'pointer', textDecoration: 'underline' }}
+                  onClick={() => navigate(`/group/${group._id}`)}
+                >
+                  {group.name}
+                </span>
+                <span className="group-members">{group.members.length} חברים</span>
+                {!isMember && (
+                  <button className="connect-button" onClick={() => handleJoinRequest(group._id, group.createdBy)}>
+                    בקש להצטרף
+                  </button>
+                )}
+                {isMember && (
+                  <span className="already-member-label" style={{ color: '#4e8c85', marginRight: 8 }}>
+                    אתה כבר חבר
+                  </span>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
