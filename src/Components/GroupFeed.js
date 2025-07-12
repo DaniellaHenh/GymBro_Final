@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import CreatePost from './CreatePost';
 import './GroupFeed.css';
+import WeeklyPostD3Chart from './WeeklyPostD3Chart';
+
 
 function GroupFeed() {
   const { groupId } = useParams();
@@ -93,7 +95,7 @@ function GroupFeed() {
               group.members.map((member) => (
                 <div key={member._id || member.id} className="group-item member-card">
                   <img
-                    src={member.profilePicture || 'https://via.placeholder.com/40'}
+                    src={member.profilePicture ||  '/default-avatar.png'}
                     alt={member.name || member.firstName || 'משתמש'}
                     className="member-avatar"
                   />
@@ -108,6 +110,9 @@ function GroupFeed() {
         <div className="groups-card">
           <button className="edit-profile-btn" onClick={() => navigate('/feed')}>חזור לדף הבית</button>
         </div>
+        <div className="groups-card">
+        <WeeklyPostD3Chart groupId={groupId} />
+      </div>
       </div>
       <div className="main-content">
         <div className="main-header">
@@ -125,7 +130,7 @@ function GroupFeed() {
                 <div className="post-header">
                   <div className="post-avatar">
                     <img
-                      src={post.userAvatar || 'https://via.placeholder.com/40'}
+                      src={post.userAvatar ||  '/default-avatar.png'}
                       alt={post.userName || 'משתמש'}
                       className="user-avatar"
                     />

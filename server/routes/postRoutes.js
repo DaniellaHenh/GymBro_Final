@@ -65,6 +65,44 @@ router.delete('/:postId', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+// routes/posts.js
+router.get('/group/:groupId/weekly-stats', async (req, res) => {
+  const { groupId } = req.params;
+
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - 6);
+  startDate.setHours(0, 0, 0, 0);
+
+  try {
+    const stats = await Post.aggregate([
+      {
+        $match: {
+          groupId,
+          createdAt: { $gte: startDate },
+        },
+      },
+      {
+        $group: {
+          _id: { $dayOfWeek: "$createdAt" },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const result = Array(7).fill(0).map((_, i) => {
+      const match = stats.find(s => s._id === i + 1); // dayOfWeek: 1 (Sunday) to 7 (Saturday)
+      return {
+        day: i + 1,
+        count: match ? match.count : 0
+      };
+    });
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch stats' });
+  }
+});
+
 
 
 module.exports = router;
