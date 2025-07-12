@@ -144,12 +144,12 @@ function Signup() {
               </div>
             </div>
 
-            {/* <div className="form-group">
+            <div className="form-group">
               <label>
                 <input type="checkbox" name="termsAgreed" checked={formData.termsAgreed} onChange={handleInputChange} />
                 אני מאשר/ת את תנאי השימוש
               </label>
-            </div> */}
+            </div>
 
             <button type="submit" className="signup-button">הרשמה</button>
           </form>
