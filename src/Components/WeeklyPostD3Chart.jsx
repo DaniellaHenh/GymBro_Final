@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import * as d3 from 'd3';
+import axios from 'axios';
 import './WeeklyPostD3Chart.css';
 
 const dayLabels = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳']; // Sunday–Saturday
@@ -10,8 +11,8 @@ export default function WeeklyPostD3Chart({ groupId }) {
   useEffect(() => {
     async function fetchData() {
       try {
-        const res = await fetch(`http://localhost:5000/api/posts/group/${groupId}/weekly-stats`);
-        const raw = await res.json();
+        const res = await axios.get(`http://localhost:5000/api/posts/group/${groupId}/weekly-stats`);
+        const raw = res.data;
 
         const data = raw.map(d => ({
           day: dayLabels[(d.day - 1) % 7],
