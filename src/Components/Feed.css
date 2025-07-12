@@ -1,3 +1,6 @@
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&display=swap');
+
+
 .feed-container {
   max-width: 600px;
   margin: 0 auto;
@@ -68,6 +71,8 @@
 .post-content {
   margin-bottom: 1rem;
   line-height: 1.5;
+  font-family: 'Heebo', sans-serif;
+
 }
 
 .post-actions {

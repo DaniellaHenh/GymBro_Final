@@ -1,3 +1,6 @@
+@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@400;700&display=swap');
+
+
 .group-feed-dashboard {
   display: flex;
   flex-direction: row-reverse;
@@ -191,6 +194,7 @@
   color: #333;
   font-size: 1.1rem;
   margin-bottom: 0.5rem;
+  font-family: 'Heebo', sans-serif; 
 }
 
 .post-actions {
