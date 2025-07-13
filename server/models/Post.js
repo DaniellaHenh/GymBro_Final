@@ -7,7 +7,8 @@ const postSchema = new mongoose.Schema({
   groupId: String,
   likes: [String],
   comments: [String],
-  createdAt: { type: Date, default: Date.now }
+  createdAt: { type: Date, default: Date.now },
+  mediaUrls: [String] // Changed from mediaUrl: String to mediaUrls: [String] for multiple files
 });
 
 module.exports = mongoose.model('Post', postSchema);

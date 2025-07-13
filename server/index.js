@@ -1,6 +1,5 @@
 const express = require('express');
 const cors = require('cors');
-const bodyParser = require('body-parser');
 const connectDB = require('./config/db');
 const userRoutes = require('./routes/userRoutes');
 const postRoutes = require('./routes/postRoutes');
@@ -10,7 +9,11 @@ const groupRoutes = require('./routes/groupRoutes');
 
 const app = express();
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json()); // For JSON requests
+app.use(express.urlencoded({ extended: true })); // For URL-encoded requests
+
+// Serve uploaded files
+app.use('/uploads', express.static('uploads'));
 
 // Connect DB
 connectDB();

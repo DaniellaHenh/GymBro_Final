@@ -7,6 +7,7 @@ import Feed from './Components/Feed';
 import UserProfile from './Components/UserProfile';
 import FindPartners from './Components/FindPartners';
 import SearchUsers from './Components/SearchUsers';
+import SearchGroups from './Components/SearchGroups';
 import './App.css';
 import HomePage from './Components/HomePage';
 
@@ -71,6 +72,10 @@ function App() {
           <Route
             path="/search-users"
             element={currentUser ? <SearchUsers /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/search-groups"
+            element={currentUser ? <SearchGroups /> : <Navigate to="/login" />}
           />
           <Route path="/create-group" element={<CreateGroup />} />
           <Route path="/group/:groupId" element={<GroupFeed />} />

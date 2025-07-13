@@ -4,13 +4,20 @@ const User = require('../models/User');
 exports.createGroup = async (req, res) => {
   console.log('Create group body:', req.body);
   try {
-    const { name, description, createdBy } = req.body;
+    const { name, description, category, location, createdBy } = req.body;
     // Check for duplicate group name
     const existingGroup = await Group.findOne({ name });
     if (existingGroup) {
       return res.status(400).json({ error: 'A group with this name already exists.' });
     }
-    const group = new Group({ name, description, createdBy, members: [createdBy] });
+    const group = new Group({ 
+      name, 
+      description, 
+      category, 
+      location, 
+      createdBy, 
+      members: [createdBy] 
+    });
     await group.save();
     res.status(201).json(group);
   } catch (err) {
@@ -26,6 +33,35 @@ exports.getGroups = async (req, res) => {
     res.json(groups);
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+
+exports.searchGroups = async (req, res) => {
+  try {
+    const { query } = req.query;
+    
+    if (!query || query.trim() === '') {
+      return res.json({ groups: [] });
+    }
+
+    const searchRegex = new RegExp(query, 'i');
+    
+    const groups = await Group.find({
+      $or: [
+        { name: searchRegex },
+        { description: searchRegex },
+        { category: searchRegex },
+        { location: searchRegex }
+      ]
+    })
+    .populate('createdBy', 'firstName lastName')
+    .populate('members');
+
+    console.log(`Search query: "${query}" returned ${groups.length} results`);
+    res.json({ groups });
+  } catch (err) {
+    console.error('Error searching groups:', err.message);
+    res.status(500).json({ message: 'Server error' });
   }
 };
 
