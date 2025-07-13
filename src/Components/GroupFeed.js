@@ -4,6 +4,7 @@ import axios from 'axios';
 import CreatePost from './CreatePost';
 import './GroupFeed.css';
 import WeeklyPostD3Chart from './WeeklyPostD3Chart';
+import GroupGenderPieChart from './GroupGenderPieChart';
 
 
 function GroupFeed() {
@@ -148,6 +149,9 @@ function GroupFeed() {
         <div className="groups-card">
         <WeeklyPostD3Chart groupId={groupId} />
       </div>
+      <div className="groups-card">
+      <GroupGenderPieChart members={group.members} />
+    </div>
       </div>
       <div className="main-content">
         <div className="main-header">

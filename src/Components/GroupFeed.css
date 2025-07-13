@@ -290,3 +290,10 @@
     padding: 1rem 0.5rem;
   }
 } 
+.chart-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 0;
+}
