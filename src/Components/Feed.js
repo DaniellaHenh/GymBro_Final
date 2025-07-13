@@ -283,7 +283,12 @@ return (
             <div key={post._id || post.id} className="post-card">
               <div className="post-header">
                 <div className="post-avatar">
-                  <div className="avatar-placeholder" />
+                  <img
+                    src={post.userAvatar || '/default-avatar.png'}
+                    alt={post.userName || 'משתמש'}
+                     width={36}
+                     height={36}
+                  />
                 </div>
                 <div className="post-user-info">
                   <div className="post-user-name">{post.userName || 'משתמש'}</div>
@@ -292,11 +297,29 @@ return (
                   </div>
                 </div>
               </div>
-              <div className="post-content">{post.text}</div>
-              <div className="post-actions">
-                <button className="post-action-btn">ערוך</button>
-                <button className="post-action-btn">מחק</button>
-              </div>
+
+              {/* מצב עריכה: אם הפוסט הוא הפוסט שנבחר לעריכה, להראות textarea וכפתורים */}
+              {editingPostId === (post._id || post.id) ? (
+                <>
+                  <textarea
+                    className="edit-post-textarea"
+                    value={editText}
+                    onChange={(e) => setEditText(e.target.value)}
+                  />
+                  <div className="post-actions">
+                    <button onClick={handleEditSave} className="post-action-btn save-btn">שמור</button>
+                    <button onClick={handleEditCancel} className="post-action-btn cancel-btn">בטל</button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="post-content">{post.text}</div>
+                  <div className="post-actions">
+                    <button onClick={() => handleEditClick(post)} className="post-action-btn">ערוך</button>
+                    <button onClick={() => handleDeletePost(post._id || post.id)} className="post-action-btn">מחק</button>
+                  </div>
+                </>
+              )}
             </div>
           ))
         )}

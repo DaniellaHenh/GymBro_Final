@@ -85,6 +85,8 @@ function Navbar({ currentUser, onLogout }) {
         <Link to={currentUser ? "/feed" : "/"} className="navbar-brand">FitPartner</Link>
       </div>
       <div className="navbar-right">
+        {currentUser && (
+        <>
         <Link to="/feed" className="nav-link">דף הבית</Link>
         <Link to="/find-partners" className="nav-link">חיפוש שותפים</Link>
         <Link to="/search-users" className="nav-link">חיפוש משתמשים</Link>
@@ -146,7 +148,8 @@ function Navbar({ currentUser, onLogout }) {
             </div>
           )}
         </div>
-
+  </>
+      )}
         {profile && (
         <div className="navbar-user">
           {profile.profilePicture ? (
