@@ -21,6 +21,7 @@ function Feed() {
   console.log(currentUserId);
   
 
+  // טען פרופיל משתמש מה-API לפי currentUserId
   useEffect(() => {
     const fetchUserProfile = async () => {
       if (currentUserId) {
@@ -37,6 +38,7 @@ function Feed() {
     fetchUserProfile();
   }, [currentUserId]);
 
+  // טען פוסטים מהשרת
   useEffect(() => {
     const fetchPosts = async () => {
       try {
@@ -66,6 +68,7 @@ function Feed() {
 
       setNewPost('');
 
+      // רענון הפוסטים לאחר הוספה
       const res = await axios.get('http://localhost:5000/api/posts');
       setPosts(res.data.posts || res.data);
     } catch (error) {
@@ -218,22 +221,34 @@ return (
         </div>
         <div className="groups-title">כל הקבוצות</div>
         <div className="groups-list">
-          {allGroups.map(group => (
-            <div className="group-item" key={group._id}>
-              <span className="group-icon">👥</span>
-              <span
-                className="group-name-link"
-                style={{ color: '#4e8c85', cursor: 'pointer', textDecoration: 'underline' }}
-                onClick={() => navigate(`/group/${group._id}`)}
-              >
-                {group.name}
-              </span>
-              <span className="group-members">{group.members.length} חברים</span>
-              <button className="connect-button" onClick={() => handleJoinRequest(group._id, group.createdBy)}>
-                בקש להצטרף
-              </button>
-            </div>
-          ))}
+          {allGroups.map(group => {
+            const isMember = group.members && group.members.some(
+              member => member === currentUserId || member._id === currentUserId
+            );
+            return (
+              <div className="group-item" key={group._id}>
+                <span className="group-icon">👥</span>
+                <span
+                  className="group-name-link"
+                  style={{ color: '#4e8c85', cursor: 'pointer', textDecoration: 'underline' }}
+                  onClick={() => navigate(`/group/${group._id}`)}
+                >
+                  {group.name}
+                </span>
+                <span className="group-members">{group.members.length} חברים</span>
+                {!isMember && (
+                  <button className="connect-button" onClick={() => handleJoinRequest(group._id, group.createdBy)}>
+                    בקש להצטרף
+                  </button>
+                )}
+                {isMember && (
+                  <span className="already-member-label" style={{ color: '#4e8c85', marginRight: 8 }}>
+                    אתה כבר חבר
+                  </span>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
@@ -268,12 +283,7 @@ return (
             <div key={post._id || post.id} className="post-card">
               <div className="post-header">
                 <div className="post-avatar">
-                  <img
-                    src={post.userAvatar || '/default-avatar.png'}
-                    alt={post.userName || 'משתמש'}
-                     width={36}
-                     height={36}
-                  />
+                  <div className="avatar-placeholder" />
                 </div>
                 <div className="post-user-info">
                   <div className="post-user-name">{post.userName || 'משתמש'}</div>
@@ -282,29 +292,11 @@ return (
                   </div>
                 </div>
               </div>
-
-              {/* מצב עריכה: אם הפוסט הוא הפוסט שנבחר לעריכה, להראות textarea וכפתורים */}
-              {editingPostId === (post._id || post.id) ? (
-                <>
-                  <textarea
-                    className="edit-post-textarea"
-                    value={editText}
-                    onChange={(e) => setEditText(e.target.value)}
-                  />
-                  <div className="post-actions">
-                    <button onClick={handleEditSave} className="post-action-btn save-btn">שמור</button>
-                    <button onClick={handleEditCancel} className="post-action-btn cancel-btn">בטל</button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="post-content">{post.text}</div>
-                  <div className="post-actions">
-                    <button onClick={() => handleEditClick(post)} className="post-action-btn">ערוך</button>
-                    <button onClick={() => handleDeletePost(post._id || post.id)} className="post-action-btn">מחק</button>
-                  </div>
-                </>
-              )}
+              <div className="post-content">{post.text}</div>
+              <div className="post-actions">
+                <button className="post-action-btn">ערוך</button>
+                <button className="post-action-btn">מחק</button>
+              </div>
             </div>
           ))
         )}

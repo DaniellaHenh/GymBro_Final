@@ -18,11 +18,10 @@ exports.createGroup = async (req, res) => {
   }
 };
 
+// Fix: Use createdBy and populate it
 exports.getGroups = async (req, res) => {
   try {
-    const groups = await Group.find()
-      .populate('createdBy', 'firstName lastName')
-      .populate('members');
+    const groups = await Group.find().populate('createdBy', '_id firstName lastName email');
     res.json(groups);
   } catch (err) {
     res.status(500).json({ error: err.message });

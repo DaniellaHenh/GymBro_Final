@@ -1,0 +1,156 @@
+.group-requests-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  direction: rtl;
+}
+
+.requests-header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.back-btn {
+  background: #6c757d;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+
+.back-btn:hover {
+  background: #5a6268;
+}
+
+.requests-title {
+  text-align: center;
+  color: #333;
+  margin: 0;
+  font-size: 24px;
+  flex: 1;
+}
+
+.requests-loading {
+  text-align: center;
+  color: #666;
+  font-size: 18px;
+  margin-top: 50px;
+}
+
+.no-requests {
+  text-align: center;
+  color: #888;
+  font-size: 18px;
+  margin-top: 50px;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+}
+
+.requests-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.request-item {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.request-user-info {
+  flex: 1;
+}
+
+.request-user-info h3 {
+  margin: 0 0 8px 0;
+  color: #333;
+  font-size: 18px;
+}
+
+.request-email {
+  color: #666;
+  margin: 5px 0;
+  font-size: 14px;
+}
+
+.request-message {
+  color: #555;
+  margin: 8px 0;
+  font-style: italic;
+  background-color: #f5f5f5;
+  padding: 8px;
+  border-radius: 4px;
+}
+
+.request-date {
+  color: #888;
+  font-size: 12px;
+  margin: 5px 0 0 0;
+}
+
+.request-actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.approve-btn, .reject-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.approve-btn {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.approve-btn:hover {
+  background-color: #45a049;
+}
+
+.reject-btn {
+  background-color: #f44336;
+  color: white;
+}
+
+.reject-btn:hover {
+  background-color: #da190b;
+}
+
+@media (max-width: 600px) {
+  .requests-header {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .request-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .request-actions {
+    justify-content: center;
+  }
+} 

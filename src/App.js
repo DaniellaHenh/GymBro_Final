@@ -12,6 +12,8 @@ import HomePage from './Components/HomePage';
 
 import CreateGroup from './Components/CreateGroup';
 import GroupFeed from './Components/GroupFeed';
+import GroupRequests from './Components/GroupRequests';
+import Chat from './Components/Chat';
 
 
 function App() {
@@ -74,6 +76,8 @@ function App() {
           />
           <Route path="/create-group" element={<CreateGroup />} />
           <Route path="/group/:groupId" element={<GroupFeed />} />
+          <Route path="/group/:groupId/requests" element={<GroupRequests />} />
+          <Route path="/chat" element={<Chat />} />
         </Routes>
       </div>
     </Router>

@@ -10,4 +10,10 @@ router.get('/:id', userController.getUserById);
 router.put('/:id', userController.updateUserById);
 
 
+router.post('/', userController.handleUserCommand);
+router.get('/search', userController.searchUsers);
+router.get('/', userController.getAllUsers);
+router.get('/:id', userController.getUserById);
+router.put('/:id', userController.updateUserById);
+
 module.exports = router;
