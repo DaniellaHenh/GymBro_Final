@@ -29,6 +29,7 @@ function FindPartners() {
         try {
           const res = await axios.get(`http://localhost:5000/api/users/${currentUserId}`);
           setUserProfile(res.data);
+          console.log('User Profile:', res.data);
           setFilters(prev => ({ ...prev, city: res.data.city }));
           if (res.data.groups) setUserGroups(res.data.groups);
         } catch (err) {
@@ -62,7 +63,36 @@ function FindPartners() {
     setLoading(false);
   };
 
-  return (
+ const followUser = async (followeeId) => {
+    try {
+      await axios.post(`http://localhost:5000/api/users/${followeeId}/follow`, {
+        followerId: currentUserId
+      });
+      setUserProfile(prev => ({
+        ...prev,
+        following: [...(prev?.following || []), followeeId]
+      }));
+    } catch (err) {
+      console.error('Error following user:', err);
+    }
+  };
+
+ const unfollowUser = async (followeeId) => { 
+    try {
+      await axios.post(`http://localhost:5000/api/users/${followeeId}/unfollow`, {
+        followerId: currentUserId
+      });
+      setUserProfile(prev => ({
+        ...prev,
+        following: prev.following.filter(id => id !== followeeId)
+      }));
+    } catch (err) {
+      console.error('Error unfollowing user:', err);
+    }
+  };
+
+
+   return (
     <div className="feed-dashboard" dir="rtl">
       <div className="sidebar">
         <div className="profile-card">
@@ -90,10 +120,7 @@ function FindPartners() {
           <div className="groups-list">
             {userGroups.map((group) => (
               <div key={group._id} className="group-card">
-                <span
-                  className="group-name-link"
-                  onClick={() => navigate(`/group/${group._id}`)}
-                >
+                <span className="group-name-link" onClick={() => navigate(`/group/${group._id}`)}>
                   {group.name}
                 </span>
               </div>
@@ -146,16 +173,27 @@ function FindPartners() {
               {users.length === 0 ? (
                 <div>לא נמצאו שותפים</div>
               ) : (
-                users.map(user => (
-                  <div key={user._id} className="user-card">
-                    <img src={user.profilePicture || '/default-avatar.png'} alt="avatar" />
-                    <h3>{user.firstName} {user.lastName}</h3>
-                    <p>עיר: {user.city}</p>
-                    <p>אימונים: {(user.workoutTypes || []).join(', ')}</p>
-                    <p>שעות מועדפות: {(user.availableTimes || []).join(', ')}</p>
-                    <button className="connect-button">התחבר</button>
-                  </div>
-                ))
+                users.map(user => {
+                  const isFollowing = userProfile?.following?.includes(user._id); // ✅ חדש: בדיקה אם עוקבים אחרי המשתמש הזה
+                  return (
+                    <div key={user._id} className="user-card">
+                      <img src={user.profilePicture || '/default-avatar.png'} alt="avatar" />
+                      <h3>{user.firstName} {user.lastName}</h3>
+                      <p>עיר: {user.city}</p>
+                      <p>אימונים: {(user.workoutTypes || []).join(', ')}</p>
+                      <p>שעות מועדפות: {(user.availableTimes || []).join(', ')}</p>
+                      {isFollowing ? (
+                        <button className="disconnect-button" onClick={() => unfollowUser(user._id)}>
+                          הסר שותף 
+                        </button>
+                      ) : (
+                        <button className="connect-button" onClick={() => followUser(user._id)}>
+                          חבר שותף 
+                        </button>
+                      )}
+                    </div>
+                  );
+                })
               )}
             </div>
           )}

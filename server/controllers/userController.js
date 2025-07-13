@@ -166,3 +166,52 @@ exports.getAllUsers = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
+
+// controllers/userController.js
+exports.followUser = async (req, res) => {
+  const followerId = req.body.followerId; // המשתמש שמבצע את המעקב
+  const followeeId = req.params.id;       // המשתמש אחריו עוקבים
+
+  if (!followerId || followerId === followeeId) {
+    return res.status(400).json({ message: 'בקשה לא תקינה' });
+  }
+
+  try {
+    // הוספת followee לרשימת following של ה-follower
+    await User.findByIdAndUpdate(
+      followerId,
+      { $addToSet: { following: followeeId } }
+    );
+
+    // הוספת follower לרשימת followers של ה-followee
+    await User.findByIdAndUpdate(
+      followeeId,
+      { $addToSet: { followers: followerId } }
+    );
+
+    return res.json({ message: 'בוצע מעקב בהצלחה' });
+  } catch (err) {
+    console.error('Error following user:', err.message);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};
+
+exports.unfollowUser = async (req, res) => {
+  const followerId = req.body.followerId;
+  const followeeId = req.params.id;
+
+  try {
+    await User.findByIdAndUpdate(
+      followerId,
+      { $pull: { following: followeeId } }
+    );
+    await User.findByIdAndUpdate(
+      followeeId,
+      { $pull: { followers: followerId } }
+    );
+    return res.json({ message: 'בוטל מעקב' });
+  } catch (err) {
+    console.error('Error unfollowing user:', err.message);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};

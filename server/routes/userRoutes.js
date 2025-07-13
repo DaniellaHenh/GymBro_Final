@@ -9,5 +9,9 @@ router.get('/', userController.getAllUsers);
 router.post('/', userController.handleUserCommand);
 router.get('/:id', userController.getUserById);
 router.put('/:id', userController.updateUserById);
+// routes/userRoutes.js
+router.post('/:id/follow', userController.followUser);     // POST /api/users/:id/follow
+router.post('/:id/unfollow', userController.unfollowUser); // POST /api/users/:id/unfollow
+
 
 module.exports = router;

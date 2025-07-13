@@ -21,6 +21,8 @@ const userSchema = new mongoose.Schema({
   workoutFrequency: String,
   bio: String,
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
+  following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+  followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
   createdAt: { type: Date, default: Date.now }
 });
 
