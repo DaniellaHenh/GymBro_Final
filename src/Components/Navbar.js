@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './Navbar.css';
 
@@ -7,10 +7,11 @@ function Navbar({ currentUser, onLogout }) {
   const [profile, setProfile] = useState(null);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProfile = async () => {
-      if (currentUser && currentUser._id) {
+      if (currentUser && currentUser._id) { // הנחה ש-ID של המשתמש נשמר ב-_id
         try {
           console.log(currentUser._id)
           const response = await axios.get(`http://localhost:5000/api/users/${currentUser._id}`);
@@ -22,7 +23,6 @@ function Navbar({ currentUser, onLogout }) {
     };
     fetchProfile();
   }, [currentUser]);
-
   useEffect(() => {
     const fetchPendingRequests = async () => {
       if (currentUser && currentUser._id) {
@@ -76,26 +76,26 @@ function Navbar({ currentUser, onLogout }) {
 
   const handleNotificationClick = (groupId) => {
     setShowNotifications(false);
-    window.location.href = `/group/${groupId}/requests`;
+    navigate(`/group/${groupId}/requests`);
   };
 
-  return (
-    <nav className="navbar" dir="rtl">
-      <div className="navbar-left">
-        <Link to={currentUser ? "/feed" : "/"} className="navbar-brand">FitPartner</Link>
-      </div>
-      <div className="navbar-right">
-        {currentUser && (
+ return (
+  <nav className="navbar" dir="rtl">
+    <div className="navbar-left">
+      <Link to={currentUser ? "/feed" : "/"} className="navbar-brand">FitPartner</Link>
+    </div>
+    <div className="navbar-right">
+      {currentUser && (
         <>
-        <Link to="/feed" className="nav-link">דף הבית</Link>
-        <Link to="/find-partners" className="nav-link">חיפוש שותפים</Link>
-        <Link to="/search-users" className="nav-link">חיפוש משתמשים</Link>
-        <Link to="/profile" className="nav-link">פרופיל</Link>
-        <Link to="/create-group" className="nav-link">צור קבוצה</Link>
-        <Link to="/chat" className="nav-link">Chat</Link>
-
-        {/* Notification Icon - Show for testing even with 0 requests */}
-        <div className="notification-container">
+          <Link to="/feed" className="nav-link">דף הבית</Link>
+          <Link to="/find-partners" className="nav-link">חיפוש שותפים</Link>
+          <Link to="/search-users" className="nav-link">חיפוש משתמשים</Link>
+          <Link to="/profile" className="nav-link">פרופיל</Link>
+          <Link to="/create-group" className="nav-link">צור קבוצה</Link>
+          <Link to="/chat" className="nav-link">Chat</Link>
+     
+      {/* Notification Icon - Show for testing even with 0 requests */}
+      <div className="notification-container">
           <button 
             className="notification-btn"
             onClick={() => setShowNotifications(!showNotifications)}
@@ -148,9 +148,9 @@ function Navbar({ currentUser, onLogout }) {
             </div>
           )}
         </div>
-  </>
+           </>
       )}
-        {profile && (
+      {profile && (
         <div className="navbar-user">
           {profile.profilePicture ? (
             <img src={profile.profilePicture} alt={profile.name || profile.firstName} className="navbar-avatar" />
@@ -159,13 +159,16 @@ function Navbar({ currentUser, onLogout }) {
           )}
           <span className="navbar-username">{profile.name || profile.firstName || 'משתמש'}</span>
         </div>
+      )
+      }
+      {currentUser && (
+        <button onClick={onLogout} className="logout-button">התנתק</button>
       )}
-        {currentUser && (
-          <button onClick={onLogout} className="logout-button">התנתק</button>
-        )}
-      </div>
-    </nav>
-  );
+    </div>
+    
+  </nav>
+);
+
 }
 
 export default Navbar;

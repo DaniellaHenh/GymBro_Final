@@ -43,7 +43,6 @@
   background-color: #e6f4f1;
   color: #4e8c85;
 }
-
 /* Notification Styles */
 .notification-container {
   position: relative;
@@ -182,7 +181,6 @@
   font-size: 0.8rem;
   margin-top: 0.5rem;
 }
-
 .navbar-user {
   display: flex;
   align-items: center;
@@ -241,11 +239,5 @@
   }
   .navbar-user {
     padding: 0.2rem 0.5rem;
-  }
-  
-  .notification-dropdown {
-    min-width: 280px;
-    max-width: 320px;
-    right: -50px;
   }
 } 

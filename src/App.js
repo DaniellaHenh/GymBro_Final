@@ -12,8 +12,8 @@ import HomePage from './Components/HomePage';
 
 import CreateGroup from './Components/CreateGroup';
 import GroupFeed from './Components/GroupFeed';
-import GroupRequests from './Components/GroupRequests';
 import Chat from './Components/Chat';
+import GroupRequests from './Components/GroupRequests';
 
 
 function App() {
@@ -76,8 +76,8 @@ function App() {
           />
           <Route path="/create-group" element={<CreateGroup />} />
           <Route path="/group/:groupId" element={<GroupFeed />} />
-          <Route path="/group/:groupId/requests" element={<GroupRequests />} />
-          <Route path="/chat" element={<Chat />} />
+          <Route path="/group/:groupId/requests" element={currentUser ? <GroupRequests /> : <Navigate to="/login" />} />
+          <Route path="/chat" element={currentUser ? <Chat /> : <Navigate to="/login" />} />
         </Routes>
       </div>
     </Router>

@@ -12,6 +12,7 @@ function Feed() {
   const [allGroups, setAllGroups] = useState([]);
   const [editingPostId, setEditingPostId] = useState(null);
   const [editText, setEditText] = useState('');
+  const [pendingGroupRequests, setPendingGroupRequests] = useState([]); // <-- NEW
 
   const navigate = useNavigate(); 
   // הנח: מזהה המשתמש הנוכחי נשמר במקום כלשהו (למשל localStorage או context)
@@ -20,6 +21,21 @@ function Feed() {
   const currentUserId = storedUser?._id || null;
   console.log(currentUserId);
   
+  // Fetch user's pending join requests
+  useEffect(() => {
+    const fetchPendingRequests = async () => {
+      if (!currentUserId) return;
+      try {
+        const res = await axios.get(`http://localhost:5000/api/join-requests/user/${currentUserId}`);
+        // Only keep groupIds for requests that are still pending
+        const pending = (res.data || []).filter(r => r.status === 'pending').map(r => r.groupId._id || r.groupId);
+        setPendingGroupRequests(pending);
+      } catch (err) {
+        console.error('Error fetching user join requests:', err);
+      }
+    };
+    fetchPendingRequests();
+  }, [currentUserId]);
 
   // טען פרופיל משתמש מה-API לפי currentUserId
   useEffect(() => {
@@ -76,7 +92,7 @@ function Feed() {
     }
   };
 
-  
+  // פונקציות עריכה ומחיקה
   const handleEditClick = (post) => {
     setEditingPostId(post._id || post.id); // מזהה הפוסט שנבחר לעריכה
     setEditText(post.text); // ממלא את הטקסט הקיים ב־textarea
@@ -122,7 +138,6 @@ function Feed() {
     }
   };
 
-  
   // סינון פוסטים לפי המשתמש הנוכחי
   const myPosts = posts.filter(post => post.userId === currentUserId);
   const recentPosts = posts;
@@ -140,21 +155,29 @@ function Feed() {
   }, []);
 
   const handleJoinRequest = async (groupId, creatorId) => {
-    // You can send a request to your backend to join the group or notify the creator
     try {
       const user = JSON.parse(localStorage.getItem('user'));
-      const res = await fetch(`http://localhost:5000/api/groups/join/${groupId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user._id })
+      const res = await axios.post('http://localhost:5000/api/join-requests/request', {
+        groupId: groupId,
+        userId: user._id,
+        message: 'בקשת הצטרפות לקבוצה'
       });
-      if (res.ok) {
+      if (res.status === 201) {
         alert('בקשתך נשלחה!');
+        // Refresh pending requests after sending
+        const pendingRes = await axios.get(`http://localhost:5000/api/join-requests/user/${currentUserId}`);
+        const pending = (pendingRes.data || []).filter(r => r.status === 'pending').map(r => r.groupId._id || r.groupId);
+        setPendingGroupRequests(pending);
       } else {
         alert('שגיאה בשליחת הבקשה');
       }
     } catch (err) {
-      alert('שגיאה בשליחת הבקשה');
+      console.error('Error sending join request:', err);
+      if (err.response?.status === 400) {
+        alert(err.response.data.error || 'שגיאה בשליחת הבקשה');
+      } else {
+        alert('שגיאה בשליחת הבקשה');
+      }
     }
   };
 
@@ -223,7 +246,15 @@ return (
         <div className="groups-list">
           {allGroups.map(group => {
             const isMember = group.members && group.members.some(
-              member => member === currentUserId || member._id === currentUserId
+              member => {
+                // Handle both string IDs and populated user objects
+                const memberId = typeof member === 'string' ? member : member._id;
+                const isCurrentUser = memberId === currentUserId;
+                if (isCurrentUser) {
+                  console.log('User is member of group:', group.name, 'Member ID:', memberId, 'Current User ID:', currentUserId);
+                }
+                return isCurrentUser;
+              }
             );
             return (
               <div className="group-item" key={group._id}>
@@ -236,7 +267,11 @@ return (
                   {group.name}
                 </span>
                 <span className="group-members">{group.members.length} חברים</span>
-                {!isMember && (
+                {!isMember && pendingGroupRequests.includes(group._id) ? (
+                  <button className="connect-button" disabled style={{ background: '#ccc', color: '#666' }}>
+                    נשלחה בקשה
+                  </button>
+                ) : !isMember && (
                   <button className="connect-button" onClick={() => handleJoinRequest(group._id, group.createdBy)}>
                     בקש להצטרף
                   </button>
@@ -337,7 +372,6 @@ return (
     </div>
   </div>
 );
-
 
 }
 

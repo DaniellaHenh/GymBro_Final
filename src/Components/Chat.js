@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import axios from 'axios';
 import './Chat.css';
 
 function Chat() {
@@ -10,24 +11,33 @@ function Chat() {
 
   // Fetch all users
   useEffect(() => {
-    fetch('/api/users')
-      .then(res => res.json())
-      .then(data => setUsers(data.filter(u => u._id !== currentUser._id)));
+    const fetchUsers = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/users');
+        setUsers(response.data.filter(u => u._id !== currentUser._id));
+      } catch (error) {
+        console.error('Error fetching users:', error);
+      }
+    };
+    fetchUsers();
   }, [currentUser?._id]);
 
   // Fetch messages when a user is selected
   useEffect(() => {
-    if (selectedUser) {
-      setMessages([]); // Clear messages immediately on user change
-      console.log('Fetching messages between:', currentUser._id, 'and', selectedUser._id);
-      fetch(`/api/messages?user1=${currentUser._id}&user2=${selectedUser._id}`)
-        .then(res => res.json())
-        .then(data => {
-          console.log('Fetched messages:', data);
-          setMessages(data);
-        })
-        .catch(err => console.error('Error fetching messages:', err));
-    }
+    const fetchMessages = async () => {
+      if (selectedUser) {
+        setMessages([]); // Clear messages immediately on user change
+        console.log('Fetching messages between:', currentUser._id, 'and', selectedUser._id);
+        try {
+          const response = await axios.get(`http://localhost:5000/api/messages?user1=${currentUser._id}&user2=${selectedUser._id}`);
+          console.log('Fetched messages:', response.data);
+          setMessages(response.data);
+        } catch (error) {
+          console.error('Error fetching messages:', error);
+        }
+      }
+    };
+    fetchMessages();
   }, [selectedUser, currentUser._id]);
 
   const handleSend = async (e) => {
@@ -35,29 +45,32 @@ function Chat() {
     if (!newMessage.trim()) return;
     
     console.log('Sending message from', currentUser._id, 'to', selectedUser._id);
-    const res = await fetch('/api/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sender: currentUser._id, receiver: selectedUser._id, text: newMessage })
-    });
-    const msg = await res.json();
-    console.log('Message sent successfully:', msg);
-    setMessages([...messages, msg]);
-    setNewMessage('');
+    try {
+      const response = await axios.post('http://localhost:5000/api/messages', {
+        sender: currentUser._id,
+        receiver: selectedUser._id,
+        text: newMessage
+      });
+      console.log('Message sent successfully:', response.data);
+      setMessages([...messages, response.data]);
+      setNewMessage('');
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
   };
 
   // Auto-refresh messages every 5 seconds when a user is selected
   useEffect(() => {
     if (!selectedUser) return;
     
-    const interval = setInterval(() => {
-      fetch(`/api/messages?user1=${currentUser._id}&user2=${selectedUser._id}`)
-        .then(res => res.json())
-        .then(data => {
-          console.log('Auto-refresh messages:', data);
-          setMessages(data);
-        })
-        .catch(err => console.error('Error auto-refreshing messages:', err));
+    const interval = setInterval(async () => {
+      try {
+        const response = await axios.get(`http://localhost:5000/api/messages?user1=${currentUser._id}&user2=${selectedUser._id}`);
+        console.log('Auto-refresh messages:', response.data);
+        setMessages(response.data);
+      } catch (error) {
+        console.error('Error auto-refreshing messages:', error);
+      }
     }, 5000);
 
     return () => clearInterval(interval);

@@ -5,7 +5,7 @@ const userController = require('../controllers/userController');
 router.post('/search-partners', userController.searchByFilters);
 router.get('/search', userController.searchUsers);
 
-
+router.get('/', userController.getAllUsers);
 router.post('/', userController.handleUserCommand);
 router.get('/:id', userController.getUserById);
 router.put('/:id', userController.updateUserById);
