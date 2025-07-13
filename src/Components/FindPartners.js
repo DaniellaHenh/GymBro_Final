@@ -116,7 +116,6 @@ function FindPartners() {
           </div>
         </div>
         <div className="groups-card">
-          <div className="groups-title">הקבוצות שלי</div>
           <div className="groups-list">
             {userGroups.map((group) => (
               <div key={group._id} className="group-card">

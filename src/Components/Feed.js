@@ -226,7 +226,6 @@ return (
       </div>
 
       <div className="groups-card">
-        <div className="groups-title">הקבוצות שלי</div>
         <div className="groups-list">
           {(userGroups.length > 0 ? userGroups : []).map((group) => (
             <div className="group-item" key={group.name || group}>
