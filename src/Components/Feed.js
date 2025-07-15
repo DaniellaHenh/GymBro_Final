@@ -13,6 +13,8 @@ function Feed() {
   const [editingPostId, setEditingPostId] = useState(null);
   const [editText, setEditText] = useState('');
   const [pendingGroupRequests, setPendingGroupRequests] = useState([]); // <-- NEW
+  const [mediaFiles, setMediaFiles] = useState([]);
+  const [commentInputs, setCommentInputs] = useState({}); // Track comment input per post
 
   const navigate = useNavigate(); 
   // הנח: מזהה המשתמש הנוכחי נשמר במקום כלשהו (למשל localStorage או context)
@@ -71,24 +73,57 @@ function Feed() {
   // הוסף פוסט חדש
   const handlePostSubmit = async (e) => {
     e.preventDefault();
-    if (!newPost.trim() || !userProfile || !currentUserId) return;
+    console.log('Form submitted');
+    console.log('newPost:', newPost);
+    console.log('mediaFile:', mediaFiles);
+    console.log('userProfile:', userProfile);
+    console.log('currentUserId:', currentUserId);
+    
+    // Allow posts with just media or just text
+    if ((!newPost.trim() && mediaFiles.length === 0) || !userProfile || !currentUserId) {
+      console.log('Validation failed - need either text or media, and user info');
+      return;
+    }
 
     try {
-      await axios.post('http://localhost:5000/api/posts/create', {
-        text: newPost,
-        userId: currentUserId,
-        userName: userProfile.name || userProfile.firstName || 'משתמש',
-        likes: [],
-        comments: []
+      const formData = new FormData();
+      if (newPost.trim()) {
+        formData.append('text', newPost);
+      } else {
+        formData.append('text', ''); // Empty text for media-only posts
+      }
+      formData.append('userId', currentUserId);
+      formData.append('userName', userProfile.name || userProfile.firstName || 'משתמש');
+      formData.append('likes', JSON.stringify([]));
+      formData.append('comments', JSON.stringify([]));
+      formData.append('userAvatar', userProfile.profilePicture || '');
+      mediaFiles.forEach(file => {
+        formData.append('media', file);
       });
 
-      setNewPost('');
+      console.log('Sending request to server...');
+      
+      // Debug: Log FormData contents
+      for (let [key, value] of formData.entries()) {
+        console.log('FormData entry:', key, value);
+      }
+      
+      const res = await axios.post('http://localhost:5000/api/posts/create', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
 
       // רענון הפוסטים לאחר הוספה
-      const res = await axios.get('http://localhost:5000/api/posts');
-      setPosts(res.data.posts || res.data);
+      const result = await axios.get('http://localhost:5000/api/posts');
+      setPosts(result.data.posts || result.data);
+      console.log('Post created successfully');
+      setNewPost('');
+      setMediaFiles([]);
+
+      // Add the new post from backend to the top of the list
+      setPosts(posts => [result.data.posts[0], ...posts]);
     } catch (error) {
       console.error('שגיאה בהוספת פוסט:', error);
+      console.error('Error details:', error.response?.data);
     }
   };
 
@@ -181,19 +216,57 @@ function Feed() {
     }
   };
 
+  // Like/unlike a post
+  const handleLike = async (postId) => {
+    if (!currentUserId) return;
+    try {
+      const res = await axios.post(`http://localhost:5000/api/posts/${postId}/like`, { userId: currentUserId });
+      setPosts(posts => posts.map(post => (post._id === postId || post.id === postId) ? res.data : post));
+    } catch (err) {
+      console.error('שגיאה בלייק:', err);
+    }
+  };
+
+  // Add comment to a post
+  const handleCommentChange = (postId, value) => {
+    setCommentInputs(inputs => ({ ...inputs, [postId]: value }));
+  };
+
+  const handleCommentSubmit = async (postId) => {
+    const commentText = commentInputs[postId]?.trim();
+    if (!commentText || !userProfile) return;
+    try {
+      const res = await axios.post(`http://localhost:5000/api/posts/${postId}/comment`, {
+        userName: userProfile.name || userProfile.firstName || 'משתמש',
+        text: commentText
+      });
+      setPosts(posts => posts.map(post => (post._id === postId || post.id === postId) ? res.data : post));
+      setCommentInputs(inputs => ({ ...inputs, [postId]: '' }));
+    } catch (err) {
+      alert('שגיאה בהוספת תגובה');
+    }
+  };
+
+  // Add this function to handle comment deletion
+  const handleDeleteComment = async (postId, commentIdx) => {
+    if (!window.confirm('האם אתה בטוח שברצונך למחוק את התגובה?')) return;
+    try {
+      const res = await axios.delete(`http://localhost:5000/api/posts/${postId}/comment/${commentIdx}`);
+      setPosts(posts => posts.map(post => (post._id === postId || post.id === postId) ? res.data : post));
+    } catch (err) {
+      alert('שגיאה במחיקת תגובה');
+    }
+  };
+
 return (
   <div className="feed-dashboard" dir="rtl">
     <div className="sidebar">
       <div className="profile-card">
         <div className="profile-avatar">
-          {userProfile?.profilePicture ? (
-            <img
-              src={userProfile.profilePicture}
-              alt={`${userProfile.firstName || ''} ${userProfile.lastName || ''}`}
-            />
-          ) : (
-            <img src="/default-avatar.png" alt="avatar" />
-          )}
+          <img
+            src={userProfile?.profilePicture ? `http://localhost:5000${userProfile.profilePicture}` : '/default-avatar.png'}
+            alt={`${userProfile?.firstName || ''} ${userProfile?.lastName || ''}`}
+          />
         </div>
         <div className="profile-info">
           <div className="profile-name">
@@ -318,7 +391,7 @@ return (
               <div className="post-header">
                 <div className="post-avatar">
                   <img
-                    src={post.userAvatar || '/default-avatar.png'}
+                    src={post.userAvatar ? (post.userAvatar.startsWith('http') ? post.userAvatar : `http://localhost:5000${post.userAvatar}`) : '/default-avatar.png'}
                     alt={post.userName || 'משתמש'}
                      width={36}
                      height={36}
@@ -348,10 +421,103 @@ return (
               ) : (
                 <>
                   <div className="post-content">{post.text}</div>
+                  {/* Show media if exists - handle both old and new formats */}
+                  {(post.mediaUrls && post.mediaUrls.length > 0) || post.mediaUrl ? (
+                    <div className="post-media">
+                      {/* Handle new format (array of URLs) */}
+                      {post.mediaUrls && post.mediaUrls.length > 0 && 
+                        post.mediaUrls.map((mediaUrl, index) => (
+                          <div key={index} className="media-item">
+                            {mediaUrl.match(/\.(mp4|webm|ogg)$/i) ? (
+                              <video controls style={{ maxWidth: '100%', margin: '5px 0' }}>
+                                <source src={`http://localhost:5000${mediaUrl}`} />
+                                הדפדפן שלך לא תומך בניגון וידאו
+                              </video>
+                            ) : (
+                              <img src={`http://localhost:5000${mediaUrl}`} alt="media" style={{ maxWidth: '100%', margin: '5px 0' }} />
+                            )}
+                          </div>
+                        ))
+                      }
+                      {/* Handle old format (single URL) */}
+                      {post.mediaUrl && !post.mediaUrls && (
+                        <div className="media-item">
+                          {post.mediaUrl.match(/\.(mp4|webm|ogg)$/i) ? (
+                            <video controls style={{ maxWidth: '100%', margin: '5px 0' }}>
+                              <source src={`http://localhost:5000${post.mediaUrl}`} />
+                              הדפדפן שלך לא תומך בניגון וידאו
+                            </video>
+                          ) : (
+                            <img src={`http://localhost:5000${post.mediaUrl}`} alt="media" style={{ maxWidth: '100%', margin: '5px 0' }} />
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ) : null}
                   <div className="post-actions">
                     <button onClick={() => handleEditClick(post)} className="post-action-btn">ערוך</button>
                     <button onClick={() => handleDeletePost(post._id || post.id)} className="post-action-btn">מחק</button>
                   </div>
+                  {/* Like button and count, only for valid MongoDB ObjectID */}
+                  {post._id && typeof post._id === 'string' && post._id.length === 24 && (
+                    <div className="post-likes-row">
+                      <button
+                        className="like-btn"
+                        onClick={() => handleLike(post._id)}
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem', marginLeft: '8px' }}
+                        aria-label={post.likes && post.likes.includes(currentUserId) ? 'בטל לייק' : 'עשה לייק'}
+                      >
+                        {post.likes && post.likes.includes(currentUserId) ? '❤️' : '🤍'}
+                      </button>
+                      <span className="likes-count">{post.likes ? post.likes.length : 0} לייקים</span>
+                    </div>
+                  )}
+
+                  {/* Comments Section */}
+                  {post._id && typeof post._id === 'string' && post._id.length === 24 ? (
+                    <div className="comments-section">
+                      <div className="comments-list">
+                        {(post.comments || []).length > 0 ? (
+                          post.comments.map((comment, idx) => (
+                            <div key={idx} className="comment-item">
+                              <span className="comment-user">{comment.userName}:</span>
+                              <span className="comment-text"> {comment.text}</span>
+                              {userProfile && (comment.userName === (userProfile.name || userProfile.firstName || 'משתמש')) && (
+                                <button
+                                  className="delete-comment-btn"
+                                  onClick={() => {
+                                    console.log('Deleting comment', { post: post, idx });
+                                    handleDeleteComment(post._id || post.id, idx);
+                                  }}
+                                  style={{ marginRight: 8, color: 'red', background: 'none', border: 'none', cursor: 'pointer' }}
+                                >
+                                  מחק
+                                </button>
+                              )}
+                            </div>
+                          ))
+                        ) : (
+                          <div className="no-comments">אין תגובות</div>
+                        )}
+                      </div>
+                      <div className="add-comment-form">
+                        <input
+                          type="text"
+                          className="add-comment-input"
+                          placeholder="הוסף תגובה..."
+                          value={commentInputs[post._id] || ''}
+                          onChange={e => handleCommentChange(post._id, e.target.value)}
+                        />
+                        <button
+                          className="add-comment-btn"
+                          type="button"
+                          onClick={() => handleCommentSubmit(post._id)}
+                        >
+                          שלח
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
                 </>
               )}
             </div>
@@ -359,14 +525,51 @@ return (
         )}
       </div>
 
-      <form className="create-post-form" onSubmit={handlePostSubmit}>
+      <form className="create-post-form" onSubmit={handlePostSubmit} encType="multipart/form-data">
         <textarea
           className="create-post-textarea"
           placeholder="מה חדש? שתף אותנו..."
           value={newPost}
           onChange={(e) => setNewPost(e.target.value)}
         />
-        <button type="submit" className="create-post-btn">פרסם</button>
+        <div className="form-actions">
+          <div className="upload-section">
+            <label className="upload-button">
+              <input
+                type="file"
+                name="media"
+                accept="image/*,video/*"
+                multiple // Allow multiple files
+                onChange={e => {
+                  console.log('Files selected:', e.target.files);
+                  setMediaFiles(Array.from(e.target.files));
+                }}
+                style={{ display: 'none' }}
+              />
+              <span className="upload-icon">+</span>
+              <span className="upload-text">
+                {mediaFiles.length > 0 ? `הוסף קבצים (${mediaFiles.length})` : 'הוסף תמונה או וידאו'}
+              </span>
+            </label>
+            {mediaFiles.length > 0 && (
+              <div className="file-info">
+                {mediaFiles.map((file, index) => (
+                  <div key={index} className="file-item">
+                    <span className="file-name">{file.name}</span>
+                    <button 
+                      type="button" 
+                      className="remove-file-btn"
+                      onClick={() => setMediaFiles(mediaFiles.filter((_, i) => i !== index))}
+                    >
+                      ✕
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <button type="submit" className="create-post-btn">פרסם</button>
+        </div>
       </form>
     </div>
   </div>

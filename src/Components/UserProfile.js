@@ -24,6 +24,8 @@ function UserProfile() {
 
   const [loading, setLoading] = useState(true);
   const originalProfile = useRef(null);
+  const [profilePicFile, setProfilePicFile] = useState(null);
+  const [uploadingPic, setUploadingPic] = useState(false);
 
   useEffect(() => {
     const currentUser = JSON.parse(localStorage.getItem('user'));
@@ -83,6 +85,27 @@ function UserProfile() {
     });
   };
 
+  const handleProfilePicChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setProfilePicFile(file);
+    setUploadingPic(true);
+    const currentUser = JSON.parse(localStorage.getItem('user'));
+    const formData = new FormData();
+    formData.append('profilePicture', file);
+    try {
+      const res = await axios.post(`http://localhost:5000/api/users/upload-profile-picture/${currentUser._id}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setProfile(prev => ({ ...prev, profilePicture: res.data.user.profilePicture }));
+      setUploadingPic(false);
+      alert('תמונת פרופיל עודכנה בהצלחה!');
+    } catch (err) {
+      setUploadingPic(false);
+      alert('שגיאה בהעלאת תמונת פרופיל');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const currentUser = JSON.parse(localStorage.getItem('user'));
@@ -119,6 +142,33 @@ function UserProfile() {
           <h2 style={{ textAlign: 'center', marginBottom: '2rem', color: '#333' }}>עריכת פרופיל</h2>
           <form onSubmit={handleSubmit}>
             <div className="profile-form-grid">
+              {/* Profile Picture Upload */}
+              <div className="form-group full-width" style={{ textAlign: 'center' }}>
+                <label>תמונת פרופיל</label>
+                <div style={{ marginBottom: '10px' }}>
+                  {profile.profilePicture ? (
+                    <img
+                      src={`http://localhost:5000${profile.profilePicture}`}
+                      alt="Profile"
+                      style={{ width: 90, height: 90, borderRadius: '50%', objectFit: 'cover', border: '2px solid #4e8c85' }}
+                    />
+                  ) : (
+                    <img
+                      src="/default-avatar.png"
+                      alt="No profile"
+                      style={{ width: 90, height: 90, borderRadius: '50%', objectFit: 'cover', border: '2px solid #ccc' }}
+                    />
+                  )}
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleProfilePicChange}
+                  disabled={uploadingPic}
+                  style={{ margin: '0 auto', display: 'block' }}
+                />
+                {uploadingPic && <div style={{ color: '#4e8c85', marginTop: 4 }}>מעלה תמונה...</div>}
+              </div>
               <div className="form-group">
                 <label>שם פרטי</label>
                 <input type="text" name="firstName" value={profile.firstName} onChange={handleInputChange} required />

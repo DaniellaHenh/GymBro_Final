@@ -18,7 +18,6 @@ function FindPartners() {
 
   const workoutTypes = ['הרמת משקולות', 'ריצה', 'יוגה', 'קרוספיט', 'שחייה', 'אופניים', 'HIIT', 'פילאטיס'];
   const timeSlots = ['בוקר (6-9)', 'בוקר מאוחר (9-12)', 'צהריים (12-15)', 'אחר הצהריים (15-18)', 'ערב (18-21)', 'לילה (21-00)'];
-  const experienceLevels = ['מתחיל', 'בינוני', 'מנוסה'];
 
   const storedUser = JSON.parse(localStorage.getItem('user'));
   const currentUserId = storedUser?._id || null;
@@ -29,7 +28,6 @@ function FindPartners() {
         try {
           const res = await axios.get(`http://localhost:5000/api/users/${currentUserId}`);
           setUserProfile(res.data);
-          console.log('User Profile:', res.data);
           setFilters(prev => ({ ...prev, city: res.data.city }));
           if (res.data.groups) setUserGroups(res.data.groups);
         } catch (err) {
@@ -47,14 +45,12 @@ function FindPartners() {
 
   const searchPartners = async () => {
     setLoading(true);
-    
     try {
       const res = await axios.post('http://localhost:5000/api/users/search-partners', {
         workoutType: filters.workoutType,
         availableTimes: filters.timeSlot,
         city: filters.city
       });
-
       const filtered = res.data.filter(user => user._id !== currentUserId);
       setUsers(filtered);
     } catch (err) {
@@ -63,7 +59,7 @@ function FindPartners() {
     setLoading(false);
   };
 
- const followUser = async (followeeId) => {
+  const followUser = async (followeeId) => {
     try {
       await axios.post(`http://localhost:5000/api/users/${followeeId}/follow`, {
         followerId: currentUserId
@@ -77,7 +73,7 @@ function FindPartners() {
     }
   };
 
- const unfollowUser = async (followeeId) => { 
+  const unfollowUser = async (followeeId) => {
     try {
       await axios.post(`http://localhost:5000/api/users/${followeeId}/unfollow`, {
         followerId: currentUserId
@@ -91,14 +87,13 @@ function FindPartners() {
     }
   };
 
-
-   return (
+  return (
     <div className="feed-dashboard" dir="rtl">
       <div className="sidebar">
         <div className="profile-card">
           <div className="profile-avatar">
             {userProfile?.profilePicture ? (
-              <img src={userProfile.profilePicture || '/default-avatar.png'} alt="avatar" />
+              <img src={userProfile.profilePicture.startsWith('http') ? userProfile.profilePicture : `http://localhost:5000${userProfile.profilePicture}`} alt="avatar" />
             ) : (
               <div className="avatar-placeholder" />
             )}
@@ -115,6 +110,7 @@ function FindPartners() {
             <div><span>שעות מועדפות:</span> {(userProfile?.availableTimes || []).map(time => <span className="profile-tag" key={time}>{time}</span>)}</div>
           </div>
         </div>
+
         <div className="groups-card">
           <div className="groups-list">
             {userGroups.map((group) => (
@@ -137,12 +133,7 @@ function FindPartners() {
           <div className="filters">
             <div className="filter-group">
               <label>עיר</label>
-              <input
-                name="city"
-                type="text"
-                value={filters.city}
-                onChange={handleFilterChange}
-              />
+              <input name="city" type="text" value={filters.city} onChange={handleFilterChange} />
             </div>
             <div className="filter-group">
               <label>סוג אימון</label>
@@ -173,21 +164,28 @@ function FindPartners() {
                 <div>לא נמצאו שותפים</div>
               ) : (
                 users.map(user => {
-                  const isFollowing = userProfile?.following?.includes(user._id); // ✅ חדש: בדיקה אם עוקבים אחרי המשתמש הזה
+                  const isFollowing = userProfile?.following?.includes(user._id);
                   return (
                     <div key={user._id} className="user-card">
-                      <img src={user.profilePicture || '/default-avatar.png'} alt="avatar" />
+                      <img
+                        src={user.profilePicture
+                          ? (user.profilePicture.startsWith('http')
+                              ? user.profilePicture
+                              : `http://localhost:5000${user.profilePicture}`)
+                          : '/default-avatar.png'}
+                        alt="avatar"
+                      />
                       <h3>{user.firstName} {user.lastName}</h3>
                       <p>עיר: {user.city}</p>
                       <p>אימונים: {(user.workoutTypes || []).join(', ')}</p>
                       <p>שעות מועדפות: {(user.availableTimes || []).join(', ')}</p>
                       {isFollowing ? (
                         <button className="disconnect-button" onClick={() => unfollowUser(user._id)}>
-                          הסר שותף 
+                          הסר שותף
                         </button>
                       ) : (
                         <button className="connect-button" onClick={() => followUser(user._id)}>
-                          חבר שותף 
+                          חבר שותף
                         </button>
                       )}
                     </div>

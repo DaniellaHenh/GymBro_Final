@@ -90,6 +90,7 @@ function Navbar({ currentUser, onLogout }) {
           <Link to="/feed" className="nav-link">דף הבית</Link>
           <Link to="/find-partners" className="nav-link">חיפוש שותפים</Link>
           <Link to="/search-users" className="nav-link">חיפוש משתמשים</Link>
+          <Link to="/search-groups" className="nav-link">חיפוש קבוצות</Link>
           <Link to="/profile" className="nav-link">פרופיל</Link>
           <Link to="/create-group" className="nav-link">צור קבוצה</Link>
           <Link to="/chat" className="nav-link">Chat</Link>
@@ -153,7 +154,7 @@ function Navbar({ currentUser, onLogout }) {
       {profile && (
         <div className="navbar-user">
           {profile.profilePicture ? (
-            <img src={profile.profilePicture} alt={profile.name || profile.firstName} className="navbar-avatar" />
+            <img src={profile.profilePicture.startsWith('http') ? profile.profilePicture : `http://localhost:5000${profile.profilePicture}`} alt={profile.name || profile.firstName} className="navbar-avatar" />
           ) : (
             <img src="/default-avatar.png" alt="avatar" className="navbar-avatar" />
           )}

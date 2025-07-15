@@ -47,14 +47,35 @@ function GroupFeed() {
   const handleCreatePost = async (newPost) => {
     setCreating(true);
     try {
-      const res = await axios.post(`http://localhost:5000/api/posts/group/${groupId}/create`, {
-        text: newPost.content,
-        userId: currentUserId,
-        userName: currentUserName,
-        groupId
+      console.log('Creating group post with:', newPost);
+      
+      const formData = new FormData();
+      if (newPost.content.trim()) {
+        formData.append('text', newPost.content);
+      } else {
+        formData.append('text', ''); // Empty text for media-only posts
+      }
+      formData.append('userId', currentUserId);
+      formData.append('userName', currentUserName);
+      formData.append('groupId', groupId);
+      
+      // Add media files if any
+      if (newPost.mediaFiles && newPost.mediaFiles.length > 0) {
+        newPost.mediaFiles.forEach(file => {
+          formData.append('media', file);
+        });
+      }
+
+      console.log('Sending group post request...');
+      
+      const res = await axios.post(`http://localhost:5000/api/posts/group/${groupId}/create`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
-      setPosts([res.data, ...posts]);
+      
+      console.log('Group post created successfully:', res.data);
+      setPosts(posts => [res.data, ...posts]);
     } catch (err) {
+      console.error('Error creating group post:', err);
       alert('שגיאה ביצירת פוסט');
     }
     setCreating(false);
@@ -73,6 +94,17 @@ function GroupFeed() {
       setEditText('');
     } catch (err) {
       alert('שגיאה בעדכון פוסט');
+    }
+  };
+
+  // Like/unlike a post
+  const handleLike = async (postId) => {
+    if (!currentUserId) return;
+    try {
+      const res = await axios.post(`http://localhost:5000/api/posts/${postId}/like`, { userId: currentUserId });
+      setPosts(posts => posts.map(post => (post._id === postId || post.id === postId) ? res.data : post));
+    } catch (err) {
+      console.error('שגיאה בלייק:', err);
     }
   };
 
@@ -131,7 +163,7 @@ function GroupFeed() {
               group.members.map((member) => (
                 <div key={member._id || member.id} className="group-item member-card">
                   <img
-                    src={member.profilePicture ||  '/default-avatar.png'}
+                    src={member.profilePicture ? (member.profilePicture.startsWith('http') ? member.profilePicture : `http://localhost:5000${member.profilePicture}`) : '/default-avatar.png'}
                     alt={member.name || member.firstName || 'משתמש'}
                     className="member-avatar"
                   />
@@ -188,7 +220,56 @@ function GroupFeed() {
                     </div>
                   </div>
                 ) : (
-                  <div className="post-content">{post.text}</div>
+                  <>
+                    <div className="post-content">{post.text}</div>
+                    {/* Show media if exists - handle both old and new formats */}
+                    {(post.mediaUrls && post.mediaUrls.length > 0) || post.mediaUrl ? (
+                      <div className="post-media">
+                        {/* Handle new format (array of URLs) */}
+                        {post.mediaUrls && post.mediaUrls.length > 0 && 
+                          post.mediaUrls.map((mediaUrl, index) => (
+                            <div key={index} className="media-item">
+                              {mediaUrl.match(/\.(mp4|webm|ogg)$/i) ? (
+                                <video controls style={{ maxWidth: '100%', margin: '5px 0' }}>
+                                  <source src={`http://localhost:5000${mediaUrl}`} />
+                                  הדפדפן שלך לא תומך בניגון וידאו
+                                </video>
+                              ) : (
+                                <img src={`http://localhost:5000${mediaUrl}`} alt="media" style={{ maxWidth: '100%', margin: '5px 0' }} />
+                              )}
+                            </div>
+                          ))
+                        }
+                        {/* Handle old format (single URL) */}
+                        {post.mediaUrl && !post.mediaUrls && (
+                          <div className="media-item">
+                            {post.mediaUrl.match(/\.(mp4|webm|ogg)$/i) ? (
+                              <video controls style={{ maxWidth: '100%', margin: '5px 0' }}>
+                                <source src={`http://localhost:5000${post.mediaUrl}`} />
+                                הדפדפן שלך לא תומך בניגון וידאו
+                              </video>
+                            ) : (
+                              <img src={`http://localhost:5000${post.mediaUrl}`} alt="media" style={{ maxWidth: '100%', margin: '5px 0' }} />
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
+                  </>
+                )}
+                {/* Like button and count, only for valid MongoDB ObjectID */}
+                {post._id && typeof post._id === 'string' && post._id.length === 24 && (
+                  <div className="post-likes-row">
+                    <button
+                      className="like-btn"
+                      onClick={() => handleLike(post._id)}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem', marginLeft: '8px' }}
+                      aria-label={post.likes && post.likes.includes(currentUserId) ? 'בטל לייק' : 'עשה לייק'}
+                    >
+                      {post.likes && post.likes.includes(currentUserId) ? '❤️' : '🤍'}
+                    </button>
+                    <span className="likes-count">{post.likes ? post.likes.length : 0} לייקים</span>
+                  </div>
                 )}
                 {post.userId === currentUserId && editingPostId !== post._id && (
                   <div className="post-actions">

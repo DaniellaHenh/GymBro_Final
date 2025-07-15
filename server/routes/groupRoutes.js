@@ -8,10 +8,13 @@ router.post('/', groupController.createGroup);
 // Get all groups
 router.get('/', groupController.getGroups);
 
-// Join a group
-router.post('/join/:groupId', groupController.joinGroup);
+// Search groups (must come before :groupId route)
+router.get('/search', groupController.searchGroups);
 
 // Get group by ID
 router.get('/:groupId', groupController.getGroupById);
+
+// Join a group
+router.post('/join/:groupId', groupController.joinGroup);
 
 module.exports = router; 
