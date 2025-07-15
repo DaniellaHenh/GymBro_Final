@@ -159,4 +159,28 @@ exports.searchByFilters = async (req, res) => {
   }
 };
 
+exports.uploadProfilePicture = async (req, res) => {
+  try {
+    console.log('uploadProfilePicture called');
+    console.log('Request params:', req.params);
+    console.log('Request file:', req.file);
+    if (!req.file) {
+      console.log('No file uploaded');
+      return res.status(400).json({ message: 'No file uploaded' });
+    }
+    const id = req.params.id;
+    const profilePicturePath = `/uploads/${req.file.filename}`;
+    const updatedUser = await User.findByIdAndUpdate(id, { profilePicture: profilePicturePath }, { new: true });
+    if (!updatedUser) {
+      console.log('User not found for id:', id);
+      return res.status(404).json({ message: 'User not found' });
+    }
+    console.log('Profile picture updated for user:', updatedUser._id, 'Path:', profilePicturePath);
+    return res.json({ message: 'Profile picture updated', user: updatedUser });
+  } catch (err) {
+    console.error('Error uploading profile picture:', err);
+    return res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
 

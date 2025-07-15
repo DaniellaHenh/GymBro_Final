@@ -68,7 +68,7 @@ function FindPartners() {
         <div className="profile-card">
           <div className="profile-avatar">
             {userProfile?.profilePicture ? (
-              <img src={userProfile.profilePicture || '/default-avatar.png'} alt="avatar" />
+              <img src={userProfile.profilePicture.startsWith('http') ? userProfile.profilePicture : `http://localhost:5000${userProfile.profilePicture}`} alt="avatar" />
             ) : (
               <div className="avatar-placeholder" />
             )}
@@ -148,7 +148,7 @@ function FindPartners() {
               ) : (
                 users.map(user => (
                   <div key={user._id} className="user-card">
-                    <img src={user.profilePicture || '/default-avatar.png'} alt="avatar" />
+                    <img src={user.profilePicture ? (user.profilePicture.startsWith('http') ? user.profilePicture : `http://localhost:5000${user.profilePicture}`) : '/default-avatar.png'} alt="avatar" />
                     <h3>{user.firstName} {user.lastName}</h3>
                     <p>עיר: {user.city}</p>
                     <p>אימונים: {(user.workoutTypes || []).join(', ')}</p>

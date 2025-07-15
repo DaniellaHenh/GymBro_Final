@@ -127,7 +127,7 @@ function GroupFeed() {
               group.members.map((member) => (
                 <div key={member._id || member.id} className="group-item member-card">
                   <img
-                    src={member.profilePicture ||  '/default-avatar.png'}
+                    src={member.profilePicture ? (member.profilePicture.startsWith('http') ? member.profilePicture : `http://localhost:5000${member.profilePicture}`) : '/default-avatar.png'}
                     alt={member.name || member.firstName || 'משתמש'}
                     className="member-avatar"
                   />

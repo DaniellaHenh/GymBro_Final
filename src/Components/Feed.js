@@ -13,6 +13,7 @@ function Feed() {
   const [editingPostId, setEditingPostId] = useState(null);
   const [editText, setEditText] = useState('');
   const [mediaFiles, setMediaFiles] = useState([]);
+  const [commentInputs, setCommentInputs] = useState({}); // Track comment input per post
 
   const navigate = useNavigate(); 
   // הנח: מזהה המשתמש הנוכחי נשמר במקום כלשהו (למשל localStorage או context)
@@ -77,6 +78,7 @@ function Feed() {
       formData.append('userName', userProfile.name || userProfile.firstName || 'משתמש');
       formData.append('likes', JSON.stringify([]));
       formData.append('comments', JSON.stringify([]));
+      formData.append('userAvatar', userProfile.profilePicture || '');
       mediaFiles.forEach(file => {
         formData.append('media', file);
       });
@@ -197,19 +199,46 @@ function Feed() {
     }
   };
 
+  // Add comment to a post
+  const handleCommentChange = (postId, value) => {
+    setCommentInputs(inputs => ({ ...inputs, [postId]: value }));
+  };
+
+  const handleCommentSubmit = async (postId) => {
+    const commentText = commentInputs[postId]?.trim();
+    if (!commentText || !userProfile) return;
+    try {
+      const res = await axios.post(`http://localhost:5000/api/posts/${postId}/comment`, {
+        userName: userProfile.name || userProfile.firstName || 'משתמש',
+        text: commentText
+      });
+      setPosts(posts => posts.map(post => (post._id === postId || post.id === postId) ? res.data : post));
+      setCommentInputs(inputs => ({ ...inputs, [postId]: '' }));
+    } catch (err) {
+      alert('שגיאה בהוספת תגובה');
+    }
+  };
+
+  // Add this function to handle comment deletion
+  const handleDeleteComment = async (postId, commentIdx) => {
+    if (!window.confirm('האם אתה בטוח שברצונך למחוק את התגובה?')) return;
+    try {
+      const res = await axios.delete(`http://localhost:5000/api/posts/${postId}/comment/${commentIdx}`);
+      setPosts(posts => posts.map(post => (post._id === postId || post.id === postId) ? res.data : post));
+    } catch (err) {
+      alert('שגיאה במחיקת תגובה');
+    }
+  };
+
 return (
   <div className="feed-dashboard" dir="rtl">
     <div className="sidebar">
       <div className="profile-card">
         <div className="profile-avatar">
-          {userProfile?.profilePicture ? (
-            <img
-              src={userProfile.profilePicture}
-              alt={`${userProfile.firstName || ''} ${userProfile.lastName || ''}`}
-            />
-          ) : (
-            <img src="/default-avatar.png" alt="avatar" />
-          )}
+          <img
+            src={userProfile?.profilePicture ? `http://localhost:5000${userProfile.profilePicture}` : '/default-avatar.png'}
+            alt={`${userProfile?.firstName || ''} ${userProfile?.lastName || ''}`}
+          />
         </div>
         <div className="profile-info">
           <div className="profile-name">
@@ -311,7 +340,7 @@ return (
               <div className="post-header">
                 <div className="post-avatar">
                   <img
-                    src={post.userAvatar || '/default-avatar.png'}
+                    src={post.userAvatar ? (post.userAvatar.startsWith('http') ? post.userAvatar : `http://localhost:5000${post.userAvatar}`) : '/default-avatar.png'}
                     alt={post.userName || 'משתמש'}
                      width={36}
                      height={36}
@@ -392,6 +421,52 @@ return (
                       <span className="likes-count">{post.likes ? post.likes.length : 0} לייקים</span>
                     </div>
                   )}
+
+                  {/* Comments Section */}
+                  {post._id && typeof post._id === 'string' && post._id.length === 24 ? (
+                    <div className="comments-section">
+                      <div className="comments-list">
+                        {(post.comments || []).length > 0 ? (
+                          post.comments.map((comment, idx) => (
+                            <div key={idx} className="comment-item">
+                              <span className="comment-user">{comment.userName}:</span>
+                              <span className="comment-text"> {comment.text}</span>
+                              {userProfile && (comment.userName === (userProfile.name || userProfile.firstName || 'משתמש')) && (
+                                <button
+                                  className="delete-comment-btn"
+                                  onClick={() => {
+                                    console.log('Deleting comment', { post: post, idx });
+                                    handleDeleteComment(post._id || post.id, idx);
+                                  }}
+                                  style={{ marginRight: 8, color: 'red', background: 'none', border: 'none', cursor: 'pointer' }}
+                                >
+                                  מחק
+                                </button>
+                              )}
+                            </div>
+                          ))
+                        ) : (
+                          <div className="no-comments">אין תגובות</div>
+                        )}
+                      </div>
+                      <div className="add-comment-form">
+                        <input
+                          type="text"
+                          className="add-comment-input"
+                          placeholder="הוסף תגובה..."
+                          value={commentInputs[post._id] || ''}
+                          onChange={e => handleCommentChange(post._id, e.target.value)}
+                        />
+                        <button
+                          className="add-comment-btn"
+                          type="button"
+                          onClick={() => handleCommentSubmit(post._id)}
+                        >
+                          שלח
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
                 </>
               )}
             </div>

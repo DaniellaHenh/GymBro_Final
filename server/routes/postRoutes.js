@@ -53,10 +53,11 @@ router.post('/create', upload.array('media', 5), async (req, res) => {
     const text = req.body?.text || '';
     const userId = req.body?.userId;
     const userName = req.body?.userName;
+    const userAvatar = req.body?.userAvatar;
     const likes = req.body?.likes;
     const comments = req.body?.comments;
     
-    console.log('Parsed data:', { text, userId, userName, likes, comments });
+    console.log('Parsed data:', { text, userId, userName, userAvatar, likes, comments });
     
     if (!userId || !userName) {
       return res.status(400).json({ error: 'Missing required fields: userId, userName' });
@@ -72,6 +73,7 @@ router.post('/create', upload.array('media', 5), async (req, res) => {
       text,
       userId,
       userName,
+      userAvatar,
       likes: likes ? JSON.parse(likes) : [],
       comments: comments ? JSON.parse(comments) : [],
       mediaUrls
@@ -184,6 +186,49 @@ router.post('/:postId/like', async (req, res) => {
     } else {
       post.likes.splice(index, 1);
     }
+    await post.save();
+    res.json(post);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Add a comment to a post
+router.post('/:postId/comment', async (req, res) => {
+  console.log('Received comment for post:', req.params.postId, req.body); // Debug log
+  try {
+    const { postId } = req.params;
+    const { userName, text } = req.body;
+    if (!userName || !text) {
+      return res.status(400).json({ error: 'Missing userName or text' });
+    }
+    const post = await Post.findById(postId);
+    if (!post) return res.status(404).json({ error: 'Post not found' });
+    post.comments.push({ userName, text });
+    await post.save();
+    res.json(post);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Delete a comment from a post
+router.delete('/:postId/comment/:commentIdx', async (req, res) => {
+  try {
+    const { postId, commentIdx } = req.params;
+    console.log('Delete comment called:', { postId, commentIdx });
+    const post = await Post.findById(postId);
+    if (!post) {
+      console.log('Post not found for id:', postId);
+      return res.status(404).json({ error: 'Post not found' });
+    }
+    const idx = parseInt(commentIdx, 10);
+    console.log('Parsed commentIdx:', idx, 'Comments length:', post.comments.length);
+    if (isNaN(idx) || idx < 0 || idx >= post.comments.length) {
+      console.log('Invalid comment index:', idx, 'Comments length:', post.comments.length);
+      return res.status(400).json({ error: 'Invalid comment index' });
+    }
+    post.comments.splice(idx, 1);
     await post.save();
     res.json(post);
   } catch (err) {

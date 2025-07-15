@@ -41,7 +41,7 @@ function Navbar({ currentUser, onLogout }) {
       {profile && (
         <div className="navbar-user">
           {profile.profilePicture ? (
-            <img src={profile.profilePicture} alt={profile.name || profile.firstName} className="navbar-avatar" />
+            <img src={profile.profilePicture.startsWith('http') ? profile.profilePicture : `http://localhost:5000${profile.profilePicture}`} alt={profile.name || profile.firstName} className="navbar-avatar" />
           ) : (
             <img src="/default-avatar.png" alt="avatar" className="navbar-avatar" />
           )}
