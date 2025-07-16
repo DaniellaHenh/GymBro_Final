@@ -32,9 +32,21 @@ const upload = multer({
 
 
 
-// שליפת כל הפוסטים שאינם פוסטים של קבוצה
+// שליפת כל הפוסטים, או רק פוסטים של קבוצות שהמשתמש חבר בהן אם סופק userId
 router.get('/', async (req, res) => {
-  const posts = await Post.find({ $or: [ { groupId: { $exists: false } }, { groupId: null }, { groupId: '' } ] }).sort({ createdAt: -1 });
+  const { userId, groupIds } = req.query;
+  let posts;
+  if (groupIds) {
+    const groupIdArray = groupIds.split(',').map(String); // Ensure all are strings
+    console.log('Querying posts for groupIds:', groupIdArray);
+    posts = await Post.find({
+      groupId: { $in: groupIdArray }
+    }).sort({ createdAt: -1 });
+    console.log('Found posts:', posts.length);
+  } else {
+    // Default: return all posts (including group posts)
+    posts = await Post.find().sort({ createdAt: -1 });
+  }
   res.json(posts);
 });
 
@@ -266,6 +278,21 @@ router.delete('/:postId', async (req, res) => {
   }
 });
 
+// Get all public posts (no groupId)
+router.get('/public', async (req, res) => {
+  try {
+    const posts = await Post.find({
+      $or: [
+        { groupId: { $exists: false } },
+        { groupId: null },
+        { groupId: '' }
+      ]
+    }).sort({ createdAt: -1 });
+    res.json(posts);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 
 
 module.exports = router;

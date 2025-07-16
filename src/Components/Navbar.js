@@ -7,6 +7,7 @@ function Navbar({ currentUser, onLogout }) {
   const [profile, setProfile] = useState(null);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [userGroups, setUserGroups] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -72,6 +73,23 @@ function Navbar({ currentUser, onLogout }) {
     // Refresh notifications every 30 seconds
     const interval = setInterval(fetchPendingRequests, 30000);
     return () => clearInterval(interval);
+  }, [currentUser]);
+
+  useEffect(() => {
+    const fetchUserGroups = async () => {
+      if (!currentUser || !currentUser._id) return;
+      try {
+        const res = await axios.get('http://localhost:5000/api/groups');
+        const myGroups = (res.data || []).filter(group =>
+          (group.members || []).map(m => typeof m === 'object' ? String(m._id) : String(m)).includes(String(currentUser._id))
+        );
+        setUserGroups(myGroups); // or setUserGroups(myGroups.map(g => g._id)) if you want just IDs
+        console.log('User groups:', myGroups);
+      } catch (err) {
+        console.error('Error fetching user groups:', err);
+      }
+    };
+    fetchUserGroups();
   }, [currentUser]);
 
   const handleNotificationClick = (groupId) => {

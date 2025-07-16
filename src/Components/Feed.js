@@ -15,20 +15,23 @@ function Feed() {
   const [pendingGroupRequests, setPendingGroupRequests] = useState([]); // <-- NEW
   const [mediaFiles, setMediaFiles] = useState([]);
   const [commentInputs, setCommentInputs] = useState({}); // Track comment input per post
+  const [currentUser, setCurrentUser] = useState(null);
+  const [publicPosts, setPublicPosts] = useState([]);
+  const [groupPosts, setGroupPosts] = useState([]);
 
   const navigate = useNavigate(); 
   // הנח: מזהה המשתמש הנוכחי נשמר במקום כלשהו (למשל localStorage או context)
   // תחליף את זה בהתאם למערכת שלך
   const storedUser = JSON.parse(localStorage.getItem('user'));
-  const currentUserId = storedUser?._id || null;
-  console.log(currentUserId);
+  const userId = storedUser?._id;
+  console.log(userId);
   
   // Fetch user's pending join requests
   useEffect(() => {
     const fetchPendingRequests = async () => {
-      if (!currentUserId) return;
+      if (!userId) return;
       try {
-        const res = await axios.get(`http://localhost:5000/api/join-requests/user/${currentUserId}`);
+        const res = await axios.get(`http://localhost:5000/api/join-requests/user/${userId}`);
         // Only keep groupIds for requests that are still pending
         const pending = (res.data || []).filter(r => r.status === 'pending').map(r => r.groupId._id || r.groupId);
         setPendingGroupRequests(pending);
@@ -37,38 +40,76 @@ function Feed() {
       }
     };
     fetchPendingRequests();
-  }, [currentUserId]);
+  }, [userId]);
 
   // טען פרופיל משתמש מה-API לפי currentUserId
   useEffect(() => {
     const fetchUserProfile = async () => {
-      if (currentUserId) {
+      if (userId) {
         try {
-          const res = await axios.get(`http://localhost:5000/api/users/${currentUserId}`);
+          const res = await axios.get(`http://localhost:5000/api/users/${userId}`);
           setUserProfile(res.data);
           console.log(res.data);
-          if (res.data.groups) setUserGroups(res.data.groups);
         } catch (err) {
           console.error('Error fetching user profile:', err);
         }
       }
     };
     fetchUserProfile();
-  }, [currentUserId]);
+  }, [userId]);
 
-  // טען פוסטים מהשרת
+  // Fetch user groups (always as objects with _id as string)
   useEffect(() => {
-    const fetchPosts = async () => {
+    const fetchUserGroups = async () => {
+      if (!userId) return;
       try {
-        const res = await axios.get('http://localhost:5000/api/posts');
-        setPosts(res.data.posts || res.data);
-        setLoading(false);
+        const res = await axios.get('http://localhost:5000/api/groups');
+        const myGroups = (res.data || []).filter(group =>
+          (group.members || []).map(m => (typeof m === 'object' ? String(m._id) : String(m))).includes(String(userId))
+        ).map(group => ({ ...group, _id: String(group._id) }));
+        setUserGroups(myGroups);
+        console.log('User groups (objects):', myGroups);
       } catch (err) {
-        console.error('שגיאה בטעינת פוסטים:', err);
+        console.error('Error fetching user groups:', err);
       }
     };
-    fetchPosts();
+    fetchUserGroups();
+  }, [userId]);
+
+  // Fetch public posts (for 'הפוסטים שלי')
+  useEffect(() => {
+    const fetchPublicPosts = async () => {
+      try {
+        const res = await axios.get('http://localhost:5000/api/posts/public');
+        setPublicPosts(res.data);
+      } catch (err) {
+        setPublicPosts([]);
+      }
+    };
+    fetchPublicPosts();
   }, []);
+
+  // Fetch group posts (for 'הפעילויות האחרונות')
+  useEffect(() => {
+    const fetchGroupPosts = async () => {
+      try {
+        if (userGroups.length > 0) {
+          const groupIds = userGroups.map(g => g._id);
+          const res = await axios.get('http://localhost:5000/api/posts', {
+            params: { groupIds: groupIds.join(',') }
+          });
+          setGroupPosts(res.data);
+        } else {
+          setGroupPosts([]);
+        }
+      } catch (err) {
+        setGroupPosts([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchGroupPosts();
+  }, [userGroups]);
 
   // הוסף פוסט חדש
   const handlePostSubmit = async (e) => {
@@ -77,10 +118,10 @@ function Feed() {
     console.log('newPost:', newPost);
     console.log('mediaFile:', mediaFiles);
     console.log('userProfile:', userProfile);
-    console.log('currentUserId:', currentUserId);
+    console.log('currentUserId:', userId);
     
     // Allow posts with just media or just text
-    if ((!newPost.trim() && mediaFiles.length === 0) || !userProfile || !currentUserId) {
+    if ((!newPost.trim() && mediaFiles.length === 0) || !userProfile || !userId) {
       console.log('Validation failed - need either text or media, and user info');
       return;
     }
@@ -92,7 +133,7 @@ function Feed() {
       } else {
         formData.append('text', ''); // Empty text for media-only posts
       }
-      formData.append('userId', currentUserId);
+      formData.append('userId', userId);
       formData.append('userName', userProfile.name || userProfile.firstName || 'משתמש');
       formData.append('likes', JSON.stringify([]));
       formData.append('comments', JSON.stringify([]));
@@ -108,19 +149,15 @@ function Feed() {
         console.log('FormData entry:', key, value);
       }
       
-      const res = await axios.post('http://localhost:5000/api/posts/create', formData, {
+      await axios.post('http://localhost:5000/api/posts/create', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      // רענון הפוסטים לאחר הוספה
-      const result = await axios.get('http://localhost:5000/api/posts');
-      setPosts(result.data.posts || result.data);
-      console.log('Post created successfully');
+      // Reload public posts after adding a new one
+      const publicRes = await axios.get('http://localhost:5000/api/posts/public');
+      setPublicPosts(publicRes.data);
       setNewPost('');
       setMediaFiles([]);
-
-      // Add the new post from backend to the top of the list
-      setPosts(posts => [result.data.posts[0], ...posts]);
     } catch (error) {
       console.error('שגיאה בהוספת פוסט:', error);
       console.error('Error details:', error.response?.data);
@@ -174,8 +211,8 @@ function Feed() {
   };
 
   // סינון פוסטים לפי המשתמש הנוכחי
-  const myPosts = posts.filter(post => post.userId === currentUserId);
-  const recentPosts = posts;
+  const myPosts = publicPosts.filter(post => post.userId === userId);
+  const recentPosts = groupPosts;
 
   useEffect(() => {
     const fetchAllGroups = async () => {
@@ -200,7 +237,7 @@ function Feed() {
       if (res.status === 201) {
         alert('בקשתך נשלחה!');
         // Refresh pending requests after sending
-        const pendingRes = await axios.get(`http://localhost:5000/api/join-requests/user/${currentUserId}`);
+        const pendingRes = await axios.get(`http://localhost:5000/api/join-requests/user/${userId}`);
         const pending = (pendingRes.data || []).filter(r => r.status === 'pending').map(r => r.groupId._id || r.groupId);
         setPendingGroupRequests(pending);
       } else {
@@ -218,9 +255,9 @@ function Feed() {
 
   // Like/unlike a post
   const handleLike = async (postId) => {
-    if (!currentUserId) return;
+    if (!userId) return;
     try {
-      const res = await axios.post(`http://localhost:5000/api/posts/${postId}/like`, { userId: currentUserId });
+      const res = await axios.post(`http://localhost:5000/api/posts/${postId}/like`, { userId: userId });
       setPosts(posts => posts.map(post => (post._id === postId || post.id === postId) ? res.data : post));
     } catch (err) {
       console.error('שגיאה בלייק:', err);
@@ -257,6 +294,19 @@ function Feed() {
       alert('שגיאה במחיקת תגובה');
     }
   };
+
+  useEffect(() => {
+    if (userId) {
+      axios.get(`http://localhost:5000/api/users/${userId}`)
+        .then(res => {
+          setCurrentUser(res.data);
+          console.log('Fetched user from MongoDB:', res.data);
+        })
+        .catch(err => {
+          console.error('Error fetching user from backend:', err);
+        });
+    }
+  }, [userId]);
 
 return (
   <div className="feed-dashboard" dir="rtl">
@@ -299,35 +349,10 @@ return (
       </div>
 
       <div className="groups-card">
-        <div className="groups-list">
-          {(userGroups.length > 0 ? userGroups : []).map((group) => (
-            <div className="group-item" key={group.name || group}>
-              <span className="group-icon">👥</span>
-              <span
-                className="group-name-link"
-                style={{ color: '#4e8c85', cursor: 'pointer', textDecoration: 'underline' }}
-                onClick={() => navigate(`/group/${group._id}`)}
-              >
-                {group.name || group}
-              </span>
-              {group.members && <span className="group-members">{group.members} חברים</span>}
-            </div>
-          ))}
-        </div>
         <div className="groups-title">כל הקבוצות</div>
         <div className="groups-list">
           {allGroups.map(group => {
-            const isMember = group.members && group.members.some(
-              member => {
-                // Handle both string IDs and populated user objects
-                const memberId = typeof member === 'string' ? member : member._id;
-                const isCurrentUser = memberId === currentUserId;
-                if (isCurrentUser) {
-                  console.log('User is member of group:', group.name, 'Member ID:', memberId, 'Current User ID:', currentUserId);
-                }
-                return isCurrentUser;
-              }
-            );
+            const isMember = userGroups.some(g => g._id === String(group._id));
             return (
               <div className="group-item" key={group._id}>
                 <span className="group-icon">👥</span>
@@ -465,9 +490,9 @@ return (
                         className="like-btn"
                         onClick={() => handleLike(post._id)}
                         style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem', marginLeft: '8px' }}
-                        aria-label={post.likes && post.likes.includes(currentUserId) ? 'בטל לייק' : 'עשה לייק'}
+                        aria-label={post.likes && post.likes.includes(userId) ? 'בטל לייק' : 'עשה לייק'}
                       >
-                        {post.likes && post.likes.includes(currentUserId) ? '❤️' : '🤍'}
+                        {post.likes && post.likes.includes(userId) ? '❤️' : '🤍'}
                       </button>
                       <span className="likes-count">{post.likes ? post.likes.length : 0} לייקים</span>
                     </div>
