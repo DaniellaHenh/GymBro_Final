@@ -3,8 +3,7 @@ const User = require('./models/User');
 const Post = require('./models/Post');
 
 // Replace with your MongoDB connection string
-const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://Inbarnadav123:u7WXs6HOB4wSZiqt@cluster0.rytl3y7.mongodb.net/myprojectdb?retryWrites=true&w=majority&appName=Cluster0';
-
+const MONGO_URI = process.env.MONGO_URI ;
 async function updateUserAvatars(userId) {
   await mongoose.connect(MONGO_URI);
   const user = await User.findById(userId);

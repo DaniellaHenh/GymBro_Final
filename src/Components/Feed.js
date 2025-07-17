@@ -416,10 +416,9 @@ return (
               <div className="post-header">
                 <div className="post-avatar">
                   <img
-                    src={post.userAvatar ? (post.userAvatar.startsWith('http') ? post.userAvatar : `http://localhost:5000${post.userAvatar}`) : '/default-avatar.png'}
-                    alt={post.userName || 'משתמש'}
-                     width={36}
-                     height={36}
+                    src={userProfile?.profilePicture ? `http://localhost:5000${userProfile.profilePicture}` : '/default-avatar.png'}
+                    alt={`${userProfile?.firstName || ''} ${userProfile?.lastName || ''}`}
+                    
                   />
                 </div>
                 <div className="post-user-info">

@@ -117,6 +117,27 @@ function GroupFeed() {
     return memberId === currentUserId;
   });
 
+  // 🔧 פונקציית עזר למציאת תמונת המשתמש מתוך חברי הקבוצה אם post.userAvatar לא קיים
+const getAvatarForPost = (post) => {
+  if (post.userAvatar) {
+    return post.userAvatar;
+  }
+
+  const matchingMember = group.members?.find(member => {
+    const memberId = typeof member === 'string' ? member : member._id;
+    return memberId === post.userId;
+  });
+
+  if (matchingMember?.profilePicture) {
+    return matchingMember.profilePicture.startsWith('http')
+      ? matchingMember.profilePicture
+      : `http://localhost:5000${matchingMember.profilePicture}`;
+  }
+
+  return '/default-avatar.png';
+};
+
+
   if (!isMember) {
     return (
       <div className="feed-dashboard group-feed-dashboard" dir="rtl">
@@ -145,6 +166,8 @@ function GroupFeed() {
       </div>
     );
   }
+
+  
 
   return (
     <div className="feed-dashboard group-feed-dashboard" dir="rtl">
@@ -200,8 +223,8 @@ function GroupFeed() {
               <div key={post._id || post.id} className="post-card group-post-card">
                 <div className="post-header">
                   <div className="post-avatar">
-                    <img
-                      src={post.userAvatar ||  '/default-avatar.png'}
+                   <img
+                      src={getAvatarForPost(post)}
                       alt={post.userName || 'משתמש'}
                       className="user-avatar"
                     />
