@@ -170,27 +170,42 @@ function Feed() {
     setEditText(post.text); // ממלא את הטקסט הקיים ב־textarea
   };
 
-  const handleEditSave = async () => {
-    if (!editText.trim()) {
-      alert('הטקסט לא יכול להיות ריק');
-      return;
-    }
-    try {
-      await axios.put(`http://localhost:5000/api/posts/${editingPostId}`, { text: editText });
+ const handleEditSave = async () => {
+  if (!editText.trim()) {
+    alert('הטקסט לא יכול להיות ריק');
+    return;
+  }
 
-      setPosts(posts.map(post =>
-        (post._id === editingPostId || post.id === editingPostId)
-          ? { ...post, text: editText }
+  try {
+    const res = await axios.put(`http://localhost:5000/api/posts/${editingPostId}`, {
+      text: editText
+    });
+
+    const updatedPost = res.data;
+
+    const updatePostList = (posts) =>
+      posts.map(post =>
+        (post._id === updatedPost._id || post.id === updatedPost._id)
+          ? updatedPost
           : post
-      ));
+      );
 
-      setEditingPostId(null); // יוצא ממצב עריכה
-      setEditText(''); // מאפס את הטקסט בעריכה
-    } catch (error) {
-      console.error('שגיאה בעדכון הפוסט:', error);
-      alert('לא הצלחנו לעדכן את הפוסט, נסה שוב.');
+    // עדכון בלייב לפי הטאב הנוכחי
+    if (activeTab === 'myPosts') {
+      setPublicPosts(prev => updatePostList(prev));
+    } else if (activeTab === 'recent') {
+      setGroupPosts(prev => updatePostList(prev));
     }
-  };
+
+    setEditingPostId(null); // סיום עריכה
+    setEditText('');
+    alert('הפוסט עודכן בהצלחה!');
+  } catch (error) {
+    console.error('שגיאה בעדכון הפוסט:', error);
+    alert('לא הצלחנו לעדכן את הפוסט, נסה שוב.');
+  }
+};
+
 
   const handleEditCancel = () => {
     setEditingPostId(null);
