@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import './CreateGroup.css';
+import axios from 'axios';
 
 const CreateGroup = () => {
   const [name, setName] = useState('');
@@ -7,26 +8,29 @@ const CreateGroup = () => {
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = async (e) => {
+
+const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setSuccess(false);
     try {
       const user = JSON.parse(localStorage.getItem('user'));
       const createdBy = user?._id;
-      const res = await fetch('http://localhost:5000/api/groups', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, description, createdBy })
+      
+      await axios.post('http://localhost:5000/api/groups', {
+        name,
+        description,
+        createdBy
       });
-      if (!res.ok) throw new Error('Failed to create group');
+
       setSuccess(true);
       setName('');
       setDescription('');
     } catch (err) {
-      setError(err.message);
+      setError(err.response?.data?.message || err.message || 'Failed to create group');
     }
   };
+
 
   return (
     <div className="create-group-container" dir="rtl">

@@ -9,6 +9,8 @@ const SearchGroups = () => {
   const [allGroups, setAllGroups] = useState([]);
   const [loading, setLoading] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [pendingGroupRequests, setPendingGroupRequests] = useState([]);
+
 
   const navigate = useNavigate();
 
@@ -77,25 +79,43 @@ const SearchGroups = () => {
     navigate(`/group/${groupId}`);
   };
 
+
   const handleJoinRequest = async (groupId, creatorId) => {
+    if (!currentUser || pendingGroupRequests.includes(groupId)) {
+      alert('כבר שלחת בקשה לקבוצה הזו או שאין משתמש מחובר');
+      return;
+    }
+
     try {
-      const user = JSON.parse(localStorage.getItem('user'));
-      const res = await fetch(`http://localhost:5000/api/groups/join/${groupId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user._id })
+      const res = await axios.post('http://localhost:5000/api/join-requests/request', {
+        groupId,
+        userId: currentUser._id,
+        message: 'בקשת הצטרפות לקבוצה'
       });
-      if (res.ok) {
+
+      if (res.status === 201) {
         alert('בקשתך נשלחה!');
-        // Refresh groups to update join status
-        fetchAllGroups();
+        // טען מחדש את כל הבקשות הממתינות
+        const pendingRes = await axios.get(`http://localhost:5000/api/join-requests/user/${currentUser._id}`);
+        const pending = (pendingRes.data || [])
+          .filter(r => r.status === 'pending')
+          .map(r => r.groupId._id || r.groupId);
+
+        setPendingGroupRequests(pending);
       } else {
         alert('שגיאה בשליחת הבקשה');
       }
     } catch (err) {
-      alert('שגיאה בשליחת הבקשה');
+      console.error('Error sending join request:', err);
+      if (err.response?.status === 400) {
+        alert(err.response.data.error || 'שגיאה בשליחת הבקשה');
+      } else {
+        alert('שגיאה בשליחת הבקשה');
+      }
     }
   };
+
+
 
   const isUserInGroup = (group) => {
     if (!currentUser || !group.members) return false;

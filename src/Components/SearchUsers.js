@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './SearchUsers.css';
+import axios from 'axios';
 
 const SearchUsers = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -16,9 +17,8 @@ const SearchUsers = () => {
       if (storedUser) {
         const user = JSON.parse(storedUser);
         try {
-          const res = await fetch(`http://localhost:5000/api/users/${user._id}`);
-          const fullUser = await res.json();
-          setCurrentUser(fullUser); // כולל .following
+          const res = await axios.get(`http://localhost:5000/api/users/${user._id}`);
+          setCurrentUser(res.data); // כולל .following
         } catch (err) {
           console.error('Error fetching current user:', err);
         }
@@ -28,31 +28,35 @@ const SearchUsers = () => {
     fetchCurrentUser();
   }, []);
 
+
   const searchUsers = async (query) => {
-    if (!query.trim()) {
-      setUsers([]);
-      return;
-    }
+  if (!query.trim()) {
+    setUsers([]);
+    return;
+  }
 
-    setLoading(true);
-    try {
-      const response = await fetch(
-        `http://localhost:5000/api/users/search?query=${encodeURIComponent(query)}&currentUserId=${currentUser?._id || ''}`
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        setUsers(data.users);
-      } else {
-        setUsers([]);
+  setLoading(true);
+  try {
+    const response = await axios.get(`http://localhost:5000/api/users/search`, {
+      params: {
+        query: query,
+        currentUserId: currentUser?._id || ''
       }
-    } catch (error) {
-      console.error('Error searching users:', error);
+    });
+
+    if (response.data && response.data.users) {
+      setUsers(response.data.users);
+    } else {
       setUsers([]);
-    } finally {
-      setLoading(false);
     }
-  };
+  } catch (error) {
+    console.error('Error searching users:', error);
+    setUsers([]);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -68,11 +72,10 @@ const SearchUsers = () => {
 
   const followUser = async (followeeId) => {
     try {
-      await fetch(`http://localhost:5000/api/users/${followeeId}/follow`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ followerId: currentUser._id })
+      await axios.post(`http://localhost:5000/api/users/${followeeId}/follow`, {
+        followerId: currentUser._id
       });
+
       setCurrentUser(prev => ({
         ...prev,
         following: [...(prev.following || []), followeeId]
@@ -82,13 +85,13 @@ const SearchUsers = () => {
     }
   };
 
+
   const unfollowUser = async (followeeId) => {
     try {
-      await fetch(`http://localhost:5000/api/users/${followeeId}/unfollow`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ followerId: currentUser._id })
+      await axios.post(`http://localhost:5000/api/users/${followeeId}/unfollow`, {
+        followerId: currentUser._id
       });
+
       setCurrentUser(prev => ({
         ...prev,
         following: prev.following.filter(id => id !== followeeId)
@@ -97,6 +100,7 @@ const SearchUsers = () => {
       console.error('Unfollow error:', err);
     }
   };
+
 
   return (
     <div className="search-users-container" dir="rtl">

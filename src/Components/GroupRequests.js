@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import './GroupRequests.css';
+import axios from 'axios';
 
 function GroupRequests() {
   const { groupId } = useParams();
@@ -15,22 +16,22 @@ function GroupRequests() {
     fetchPendingRequests();
   }, [groupId]);
 
+
   const fetchGroupDetails = async () => {
     try {
-      const response = await fetch(`/api/groups/${groupId}`);
-      const groupData = await response.json();
-      setGroup(groupData);
+      const response = await axios.get(`/api/groups/${groupId}`);
+      setGroup(response.data);
     } catch (error) {
       console.error('Error fetching group details:', error);
     }
   };
 
+
   const fetchPendingRequests = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/join-requests/pending/${groupId}`);
-      const data = await response.json();
-      setRequests(data);
+      const response = await axios.get(`/api/join-requests/pending/${groupId}`);
+      setRequests(response.data);
     } catch (error) {
       console.error('Error fetching requests:', error);
     } finally {
@@ -40,45 +41,33 @@ function GroupRequests() {
 
   const handleApprove = async (requestId) => {
     try {
-      const response = await fetch(`/api/join-requests/approve/${requestId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' }
-      });
+      await axios.put(`/api/join-requests/approve/${requestId}`);
       
-      if (response.ok) {
-        // Remove the approved request from the list
-        setRequests(requests.filter(req => req._id !== requestId));
-        alert('Request approved successfully!');
-      } else {
-        const error = await response.json();
-        alert(`Error: ${error.error}`);
-      }
+      // Remove the approved request from the list
+      setRequests(requests.filter(req => req._id !== requestId));
+      alert('Request approved successfully!');
     } catch (error) {
       console.error('Error approving request:', error);
-      alert('Error approving request');
+      const message = error.response?.data?.error || 'Error approving request';
+      alert(`Error: ${message}`);
     }
   };
 
+
   const handleReject = async (requestId) => {
     try {
-      const response = await fetch(`/api/join-requests/reject/${requestId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      if (response.ok) {
-        // Remove the rejected request from the list
-        setRequests(requests.filter(req => req._id !== requestId));
-        alert('Request rejected successfully!');
-      } else {
-        const error = await response.json();
-        alert(`Error: ${error.error}`);
-      }
+      await axios.put(`/api/join-requests/reject/${requestId}`);
+
+      // Remove the rejected request from the list
+      setRequests(requests.filter(req => req._id !== requestId));
+      alert('Request rejected successfully!');
     } catch (error) {
       console.error('Error rejecting request:', error);
-      alert('Error rejecting request');
+      const message = error.response?.data?.error || 'Error rejecting request';
+      alert(`Error: ${message}`);
     }
   };
+
 
   if (loading) {
     return <div className="requests-loading">טוען בקשות הצטרפות...</div>;
