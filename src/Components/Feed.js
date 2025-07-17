@@ -18,6 +18,8 @@ function Feed() {
   const [currentUser, setCurrentUser] = useState(null);
   const [publicPosts, setPublicPosts] = useState([]);
   const [groupPosts, setGroupPosts] = useState([]);
+  const [followingUsers, setFollowingUsers] = useState([]);
+
 
   const navigate = useNavigate(); 
   // הנח: מזהה המשתמש הנוכחי נשמר במקום כלשהו (למשל localStorage או context)
@@ -58,6 +60,16 @@ function Feed() {
     fetchUserProfile();
   }, [userId]);
 
+  useEffect(() => {
+  if (userProfile?.following) {
+    const followingIds = userProfile.following.map(id =>
+      typeof id === 'object' ? id.$oid || id._id : id
+    );
+    setFollowingUsers(followingIds);
+  }
+}, [userProfile]);
+
+
   // Fetch user groups (always as objects with _id as string)
   useEffect(() => {
     const fetchUserGroups = async () => {
@@ -91,25 +103,32 @@ function Feed() {
 
   // Fetch group posts (for 'הפעילויות האחרונות')
   useEffect(() => {
-    const fetchGroupPosts = async () => {
-      try {
-        if (userGroups.length > 0) {
-          const groupIds = userGroups.map(g => g._id);
-          const res = await axios.get('http://localhost:5000/api/posts', {
-            params: { groupIds: groupIds.join(',') }
-          });
-          setGroupPosts(res.data);
-        } else {
-          setGroupPosts([]);
+  const fetchRecentPosts = async () => {
+    try {
+      if (!userId) return;
+
+      const groupIds = userGroups.map(g => g._id);
+      const allUserIds = [...new Set([userId, ...followingUsers])];
+
+      const res = await axios.get('http://localhost:5000/api/posts/recent', {
+        params: {
+          userIds: allUserIds.join(','),
+          groupIds: groupIds.join(',')
         }
-      } catch (err) {
-        setGroupPosts([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchGroupPosts();
-  }, [userGroups]);
+      });
+
+      setGroupPosts(res.data);
+    } catch (err) {
+      console.error('שגיאה בטעינת recent posts:', err);
+      setGroupPosts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchRecentPosts();
+}, [userId, userGroups, followingUsers]);
+
 
   // הוסף פוסט חדש
   const handlePostSubmit = async (e) => {

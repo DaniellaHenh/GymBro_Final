@@ -184,6 +184,29 @@ router.get('/group/:groupId/weekly-stats', async (req, res) => {
   }
 });
 
+// שליפת פוסטים לפי userIds ו/או groupIds
+router.get('/recent', async (req, res) => {
+  try {
+    const { userIds, groupIds } = req.query;
+
+    const userIdArr = userIds ? userIds.split(',') : [];
+    const groupIdArr = groupIds ? groupIds.split(',') : [];
+
+    const posts = await Post.find({
+      $or: [
+        { userId: { $in: userIdArr } },
+        { groupId: { $in: groupIdArr } }
+      ]
+    }).sort({ createdAt: -1 });
+
+    res.json(posts);
+  } catch (err) {
+    console.error('שגיאה ב־/api/posts/recent:', err);
+    res.status(500).json({ error: 'שגיאה בטעינת פוסטים' });
+  }
+});
+
+
 // Like/unlike a post (must be before any /:postId route)
 router.post('/:postId/like', async (req, res) => {
   try {
@@ -293,6 +316,7 @@ router.get('/public', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 
 module.exports = router;
