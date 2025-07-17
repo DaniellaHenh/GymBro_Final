@@ -418,7 +418,7 @@ return (
                   <img
                     src={userProfile?.profilePicture ? `http://localhost:5000${userProfile.profilePicture}` : '/default-avatar.png'}
                     alt={`${userProfile?.firstName || ''} ${userProfile?.lastName || ''}`}
-                    
+                    style={{ width: '44px', height: '44px', borderRadius: '50%' }}
                   />
                 </div>
                 <div className="post-user-info">
