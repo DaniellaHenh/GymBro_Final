@@ -198,17 +198,22 @@ function Feed() {
   };
 
   const handleDeletePost = async (postId) => {
-    if (!window.confirm('אתה בטוח שברצונך למחוק את הפוסט?')) return; // אישור לפני מחיקה
+  if (!window.confirm('אתה בטוח שברצונך למחוק את הפוסט?')) return;
 
-    try {
-      await axios.delete(`http://localhost:5000/api/posts/${postId}`);
+  try {
+    await axios.delete(`http://localhost:5000/api/posts/${postId}`);
 
-      setPosts(posts.filter(post => post._id !== postId && post.id !== postId));
-    } catch (error) {
-      console.error('שגיאה במחיקת הפוסט:', error);
-      alert('לא הצלחנו למחוק את הפוסט, נסה שוב.');
-    }
-  };
+    // הסר מהפוסטים של כל סוג (פומביים וקבוצתיים)
+    setPublicPosts(prev => prev.filter(post => post._id !== postId && post.id !== postId));
+    setGroupPosts(prev => prev.filter(post => post._id !== postId && post.id !== postId));
+
+    alert('הפוסט נמחק בהצלחה!');
+  } catch (error) {
+    console.error('שגיאה במחיקת הפוסט:', error);
+    alert('לא הצלחנו למחוק את הפוסט, נסה שוב.');
+  }
+};
+
 
   // סינון פוסטים לפי המשתמש הנוכחי
   const myPosts = publicPosts.filter(post => post.userId === userId);
