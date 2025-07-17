@@ -293,15 +293,28 @@ function Feed() {
   };
 
   // Like/unlike a post
-  const handleLike = async (postId) => {
-    if (!userId) return;
-    try {
-      const res = await axios.post(`http://localhost:5000/api/posts/${postId}/like`, { userId: userId });
-      setPosts(posts => posts.map(post => (post._id === postId || post.id === postId) ? res.data : post));
-    } catch (err) {
-      console.error('שגיאה בלייק:', err);
+ const handleLike = async (postId) => {
+  if (!userId) return;
+  try {
+    const res = await axios.post(`http://localhost:5000/api/posts/${postId}/like`, { userId });
+
+    const updatedPost = res.data;
+
+    const updatePostList = (posts) =>
+      posts.map(post =>
+        (post._id === postId || post.id === postId) ? updatedPost : post
+      );
+
+    if (activeTab === 'myPosts') {
+      setPublicPosts(prev => updatePostList(prev));
+    } else if (activeTab === 'recent') {
+      setGroupPosts(prev => updatePostList(prev));
     }
-  };
+  } catch (err) {
+    console.error('שגיאה בלייק:', err);
+  }
+};
+
 
   // Add comment to a post
   const handleCommentChange = (postId, value) => {
@@ -549,10 +562,12 @@ return (
                       )}
                     </div>
                   ) : null}
-                  <div className="post-actions">
-                    <button onClick={() => handleEditClick(post)} className="post-action-btn">ערוך</button>
-                    <button onClick={() => handleDeletePost(post._id || post.id)} className="post-action-btn">מחק</button>
-                  </div>
+                  {activeTab === 'myPosts' && (
+                    <div className="post-actions">
+                      <button onClick={() => handleEditClick(post)} className="post-action-btn">ערוך</button>
+                      <button onClick={() => handleDeletePost(post._id || post.id)} className="post-action-btn">מחק</button>
+                    </div>
+                  )}
                   {/* Like button and count, only for valid MongoDB ObjectID */}
                   {post._id && typeof post._id === 'string' && post._id.length === 24 && (
                     <div className="post-likes-row">
