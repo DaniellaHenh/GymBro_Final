@@ -174,6 +174,7 @@ function FindPartners() {
                               : `http://localhost:5000${user.profilePicture}`)
                           : '/default-avatar.png'}
                         alt="avatar"
+                        className="user-avatar"
                       />
                       <h3>{user.firstName} {user.lastName}</h3>
                       <p>עיר: {user.city}</p>
