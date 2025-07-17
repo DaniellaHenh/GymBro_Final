@@ -274,31 +274,61 @@ function Feed() {
     setCommentInputs(inputs => ({ ...inputs, [postId]: value }));
   };
 
-  const handleCommentSubmit = async (postId) => {
-    const commentText = commentInputs[postId]?.trim();
-    if (!commentText || !userProfile) return;
-    try {
-      const res = await axios.post(`http://localhost:5000/api/posts/${postId}/comment`, {
-        userName: userProfile.name || userProfile.firstName || 'משתמש',
-        text: commentText
-      });
-      setPosts(posts => posts.map(post => (post._id === postId || post.id === postId) ? res.data : post));
-      setCommentInputs(inputs => ({ ...inputs, [postId]: '' }));
-    } catch (err) {
-      alert('שגיאה בהוספת תגובה');
+ const handleCommentSubmit = async (postId) => {
+  const commentText = commentInputs[postId]?.trim();
+  if (!commentText || !userProfile) return;
+
+  try {
+    const res = await axios.post(`http://localhost:5000/api/posts/${postId}/comment`, {
+      userName: userProfile.name || userProfile.firstName || 'משתמש',
+      text: commentText
+    });
+
+    // עדכון בהתאם לטאב הפעיל
+    const updatePostList = (posts) =>
+      posts.map(post =>
+        (post._id === postId || post.id === postId) ? res.data : post
+      );
+
+    if (activeTab === 'myPosts') {
+      setPublicPosts(prev => updatePostList(prev));
+    } else if (activeTab === 'recent') {
+      setGroupPosts(prev => updatePostList(prev));
     }
-  };
+
+    setCommentInputs(inputs => ({ ...inputs, [postId]: '' }));
+  } catch (err) {
+    console.error('שגיאה בהוספת תגובה:', err);
+    alert('שגיאה בהוספת תגובה');
+  }
+};
+
 
   // Add this function to handle comment deletion
-  const handleDeleteComment = async (postId, commentIdx) => {
-    if (!window.confirm('האם אתה בטוח שברצונך למחוק את התגובה?')) return;
-    try {
-      const res = await axios.delete(`http://localhost:5000/api/posts/${postId}/comment/${commentIdx}`);
-      setPosts(posts => posts.map(post => (post._id === postId || post.id === postId) ? res.data : post));
-    } catch (err) {
-      alert('שגיאה במחיקת תגובה');
+ const handleDeleteComment = async (postId, commentIdx) => {
+  if (!window.confirm('האם אתה בטוח שברצונך למחוק את התגובה?')) return;
+
+  try {
+    const res = await axios.delete(`http://localhost:5000/api/posts/${postId}/comment/${commentIdx}`);
+
+    const updatePostList = (posts) =>
+      posts.map(post =>
+        (post._id === postId || post.id === postId) ? res.data : post
+      );
+
+    if (activeTab === 'myPosts') {
+      setPublicPosts(prev => updatePostList(prev));
+    } else if (activeTab === 'recent') {
+      setGroupPosts(prev => updatePostList(prev));
     }
-  };
+
+    alert('התגובה נמחקה בהצלחה!');
+  } catch (err) {
+    console.error('שגיאה במחיקת תגובה:', err);
+    alert('שגיאה במחיקת תגובה');
+  }
+};
+
 
   useEffect(() => {
     if (userId) {
@@ -420,9 +450,11 @@ return (
             <div key={post._id || post.id} className="post-card">
               <div className="post-header">
                 <div className="post-avatar">
-                  <img
-                    src={userProfile?.profilePicture ? `http://localhost:5000${userProfile.profilePicture}` : '/default-avatar.png'}
-                    alt={`${userProfile?.firstName || ''} ${userProfile?.lastName || ''}`}
+                 <img
+                    src={post.userAvatar ? 
+                      (post.userAvatar.startsWith('http') ? post.userAvatar : `http://localhost:5000${post.userAvatar}`) 
+                      : '/default-avatar.png'}
+                    alt={post.userName || 'משתמש'}
                     style={{ width: '44px', height: '44px', borderRadius: '50%' }}
                   />
                 </div>
