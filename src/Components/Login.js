@@ -23,6 +23,8 @@ function Login() {
       console.log('Login response:', response.data);
   
       if (response.data.user) {
+        console.log('user before saving to localStorage:', response.data.user);
+
         localStorage.setItem('user', JSON.stringify(response.data.user));
         window.location.href = '/feed';
       } else {

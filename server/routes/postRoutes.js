@@ -107,7 +107,7 @@ router.post('/group/:groupId/create', upload.array('media', 5), async (req, res)
     console.log('req.body:', req.body);
     console.log('req.files:', req.files);
     
-    const { text, userId, userName } = req.body;
+    const { text, userId, userName, userAvatar } = req.body;
     const { groupId } = req.params;
     
     if (!userId || !userName) {
@@ -125,6 +125,7 @@ router.post('/group/:groupId/create', upload.array('media', 5), async (req, res)
       userId, 
       userName, 
       groupId,
+      userAvatar,
       mediaUrls
     });
     await newPost.save();

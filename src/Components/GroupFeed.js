@@ -19,6 +19,7 @@ function GroupFeed() {
   const currentUserId = storedUser?._id || storedUser?.id || null;
   const currentUserName = storedUser?.name || storedUser?.firstName || 'משתמש';
   const currentUserAvatar = storedUser?.profilePicture || '';
+  console.log('Current user:', storedUser);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -51,6 +52,7 @@ function GroupFeed() {
       formData.append('text', newPost.content.trim() || '');
       formData.append('userId', currentUserId);
       formData.append('userName', currentUserName);
+      formData.append('userAvatar', currentUserAvatar || '');
       formData.append('groupId', groupId);
       if (newPost.mediaFiles && newPost.mediaFiles.length > 0) {
         newPost.mediaFiles.forEach(file => {
